@@ -6,7 +6,7 @@ import {
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-export default class PHPCSDiagnosticsProvider {
+export default class PHPCSDiagnosticProvider {
   documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
   connection: Connection;
 
@@ -20,11 +20,18 @@ export default class PHPCSDiagnosticsProvider {
   }
 
   private validate(document: TextDocument): void {
+    const uri = document.uri;
+    const diagnostics = this.getDiagnostics(document);
+
+    this.connection.sendDiagnostics({ uri, diagnostics });
+  }
+
+  private getDiagnostics(document: TextDocument): Diagnostic[] {
     const text = document.getText();
+    const diagnostics: Diagnostic[] = [];
     const pattern = /\b[A-Z]{2,}\b/g;
     let m: RegExpExecArray | null;
 
-    const diagnostics: Diagnostic[] = [];
     while ((m = pattern.exec(text))) {
       const diagnostic: Diagnostic = {
         severity: DiagnosticSeverity.Warning,
@@ -39,6 +46,6 @@ export default class PHPCSDiagnosticsProvider {
       diagnostics.push(diagnostic);
     }
 
-    this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+    return diagnostics;
   }
 }

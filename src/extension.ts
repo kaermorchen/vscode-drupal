@@ -10,8 +10,6 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-  console.log('Activate!');
-
   const serverModule = context.asAbsolutePath(join('out', 'server.js'));
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },

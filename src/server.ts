@@ -3,28 +3,23 @@ import {
   ProposedFeatures,
   TextDocumentSyncKind,
 } from 'vscode-languageserver/node';
+import PHPCSDiagnosticProvider from './providers/PHPCSDiagnosticProvider';
 
-import PHPCSDiagnosticsProvider from './providers/phpcsDiagnosticsProvider';
+const connection = createConnection(ProposedFeatures.all);
 
-function main(): void {
-  const connection = createConnection(ProposedFeatures.all);
-
-  connection.onInitialize(() => {
-    return {
-      capabilities: {
-        textDocumentSync: {
-          openClose: true,
-          save: true,
-          change: TextDocumentSyncKind.Full,
-        },
-        hoverProvider: true,
+connection.onInitialize(() => {
+  return {
+    capabilities: {
+      textDocumentSync: {
+        openClose: true,
+        save: true,
+        change: TextDocumentSyncKind.Full,
       },
-    };
-  });
+      // hoverProvider: true,
+    },
+  };
+});
 
-  new PHPCSDiagnosticsProvider(connection);
+new PHPCSDiagnosticProvider(connection);
 
-  connection.listen();
-}
-
-main();
+connection.listen();
