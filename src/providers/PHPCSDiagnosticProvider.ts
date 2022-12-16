@@ -1,3 +1,5 @@
+import { spawn } from 'child_process';
+import { URI } from 'vscode-uri';
 import {
   Connection,
   Diagnostic,
@@ -6,7 +8,25 @@ import {
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
+const LINTER_MESSAGE_TYPE = <const>{
+  ERROR: DiagnosticSeverity.Error,
+  WARNING: DiagnosticSeverity.Warning,
+};
+
+type LinterMessageTypeValue = keyof typeof LINTER_MESSAGE_TYPE;
+
+interface LinterMessage {
+  message: string;
+  source: string;
+  severity: number;
+  fixable: boolean;
+  type: LinterMessageTypeValue;
+  line: number;
+  column: number;
+}
+
 export default class PHPCSDiagnosticProvider {
+  name = 'phpcs';
   documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
   connection: Connection;
 
@@ -19,33 +39,50 @@ export default class PHPCSDiagnosticProvider {
     });
   }
 
-  private validate(document: TextDocument): void {
-    const uri = document.uri;
-    const diagnostics = this.getDiagnostics(document);
-
-    this.connection.sendDiagnostics({ uri, diagnostics });
+  get source() {
+    return `Drupal: ${this.name}`;
   }
 
-  private getDiagnostics(document: TextDocument): Diagnostic[] {
-    const text = document.getText();
-    const diagnostics: Diagnostic[] = [];
-    const pattern = /\b[A-Z]{2,}\b/g;
-    let m: RegExpExecArray | null;
+  private validate(document: TextDocument): void {
+    const uri = document.uri;
+    const filePath = URI.parse(uri).path;
+    // TODO: read arguments from settings and environment
+    const phpcsPath = 'vendor/bin/phpcs';
+    const args = ['--report=json', '-q', `--encoding=UTF-8`, `--standard=PEAR`];
+    // TODO: add abort signal
+    const phpcs = spawn('php', [phpcsPath, filePath, ...args]);
 
-    while ((m = pattern.exec(text))) {
-      const diagnostic: Diagnostic = {
-        severity: DiagnosticSeverity.Warning,
-        range: {
-          start: document.positionAt(m.index),
-          end: document.positionAt(m.index + m[0].length),
-        },
-        message: `${m[0]} is all uppercase.`,
-        source: 'ex',
-      };
+    phpcs.stdout.on('data', (data) => {
+      const json = JSON.parse(data);
+      const diagnostics: Diagnostic[] = [];
 
-      diagnostics.push(diagnostic);
-    }
+      if (filePath in json.files) {
+        json.files[filePath].messages.forEach((obj: LinterMessage) => {
+          const severity: DiagnosticSeverity = LINTER_MESSAGE_TYPE[obj.type];
+          const line = obj.line - 1;
+          const character = obj.column;
+          const { message } = obj;
+          const { source } = this;
+          const range = {
+            start: { line, character },
+            end: { line, character },
+          };
 
-    return diagnostics;
+          diagnostics.push({ severity, message, source, range });
+        });
+      }
+
+      if (diagnostics.length) {
+        this.connection.sendDiagnostics({ uri, diagnostics });
+      }
+    });
+
+    phpcs.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+    });
+
+    // phpcs.on('close', (code) => {
+    //   console.log(`child process exited with code ${code}`);
+    // });
   }
 }
