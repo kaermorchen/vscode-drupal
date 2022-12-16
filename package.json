@@ -10,7 +10,7 @@
   },
   "categories": [],
   "activationEvents": [
-    "*"
+    "onLanguage:php"
   ],
   "main": "./out/extension.js",
   "contributes": {
