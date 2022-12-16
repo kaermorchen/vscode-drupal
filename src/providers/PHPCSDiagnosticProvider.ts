@@ -48,9 +48,24 @@ export default class PHPCSDiagnosticProvider {
     const filePath = URI.parse(uri).path;
     // TODO: read arguments from settings and environment
     const phpcsPath = 'vendor/bin/phpcs';
-    const args = ['--report=json', '-q', `--encoding=UTF-8`, `--standard=PEAR`];
+    const spawnOptions = {
+      encoding: 'utf8',
+      timeout: 1000 * 60 * 1, // 1 minute
+    };
+    const args = [
+      phpcsPath,
+      '--report=json',
+      '-q',
+      `--encoding=UTF-8`,
+      `--stdin-path=${filePath}`,
+      `--standard=Drupal,DrupalPractice`,
+      '-'
+    ];
     // TODO: add abort signal
-    const phpcs = spawn('php', [phpcsPath, filePath, ...args]);
+    const phpcs = spawn('php', args, spawnOptions);
+
+    phpcs.stdin.write(document.getText());
+    phpcs.stdin.end();
 
     phpcs.stdout.on('data', (data) => {
       const json = JSON.parse(data);
