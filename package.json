@@ -10,14 +10,19 @@
   },
   "categories": [],
   "activationEvents": [
-    "onLanguage:php"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "type": "object",
-      "title": "Example configuration",
+      "title": "Drupal",
       "properties": {
+        "vscode-drupal.diagnostic.phpcs.enabled": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Whether [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) is enabled."
+        },
         "vscode-drupal.trace.server": {
           "scope": "window",
           "type": "string",
@@ -26,8 +31,8 @@
             "messages",
             "verbose"
           ],
-          "default": "messages",
-          "description": "Traces the communication between VS Code and the language server."
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server. This setting is helpful for debugging."
         }
       }
     }

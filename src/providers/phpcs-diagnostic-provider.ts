@@ -4,9 +4,14 @@ import {
   Connection,
   Diagnostic,
   DiagnosticSeverity,
+  DidChangeConfigurationNotification,
+  InitializeParams,
+  InitializeResult,
   TextDocuments,
+  TextDocumentSyncKind,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { join } from 'path';
 
 const LINTER_MESSAGE_TYPE = <const>{
   ERROR: DiagnosticSeverity.Error,
@@ -27,39 +32,94 @@ interface LinterMessage {
 
 export default class PHPCSDiagnosticProvider {
   name = 'phpcs';
-  documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+  documents = new TextDocuments(TextDocument);
   connection: Connection;
+  hasConfigurationCapability = false;
+  hasWorkspaceFolderCapability = false;
 
   constructor(connection: Connection) {
     this.connection = connection;
 
-    this.documents.listen(this.connection);
+    this.init();
+  }
+
+  init(): void {
+    this.connection.onInitialize((params: InitializeParams) => {
+      const capabilities = params.capabilities;
+
+      this.hasConfigurationCapability = capabilities?.workspace?.configuration ?? false;
+      this.hasWorkspaceFolderCapability = capabilities?.workspace?.workspaceFolders ?? false;
+
+      const result: InitializeResult = {
+        capabilities: {
+          textDocumentSync: {
+            openClose: true,
+            save: true,
+            change: TextDocumentSyncKind.Full,
+          },
+        },
+      };
+
+      if (this.hasWorkspaceFolderCapability) {
+        result.capabilities.workspace = {
+          workspaceFolders: {
+            supported: true,
+          },
+        };
+      }
+
+      return result;
+    });
+
+    this.connection.onInitialized(() => {
+      if (this.hasConfigurationCapability) {
+        this.connection.client.register(
+          DidChangeConfigurationNotification.type
+        );
+      }
+      // if (this.hasWorkspaceFolderCapability) {
+      //   this.connection.workspace.onDidChangeWorkspaceFolders((_event) => {
+      //     this.connection.console.log(
+      //       'Workspace folder change event received.'
+      //     );
+      //   });
+      // }
+    });
+
+    this.connection.onDidChangeConfiguration(() => {
+      this.documents.all().forEach(this.validate, this);
+    });
+
     this.documents.onDidChangeContent((event) => {
       this.validate(event.document);
     });
+    this.documents.listen(this.connection);
   }
 
   get source() {
     return `Drupal: ${this.name}`;
   }
 
-  private validate(document: TextDocument): void {
+  get phpcsPath() {
+    return join('vendor', 'bin', 'phpcs');
+  }
+
+  validate(document: TextDocument): void {
     const uri = document.uri;
     const filePath = URI.parse(uri).path;
     // TODO: read arguments from settings and environment
-    const phpcsPath = 'vendor/bin/phpcs';
     const spawnOptions = {
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      phpcsPath,
+      this.phpcsPath,
       '--report=json',
       '-q',
       `--encoding=UTF-8`,
       `--stdin-path=${filePath}`,
       `--standard=Drupal,DrupalPractice`,
-      '-'
+      '-',
     ];
     // TODO: add abort signal
     const phpcs = spawn('php', args, spawnOptions);
@@ -93,11 +153,7 @@ export default class PHPCSDiagnosticProvider {
     });
 
     phpcs.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
+      this.connection.console.error(`stderr: ${data}`);
     });
-
-    // phpcs.on('close', (code) => {
-    //   console.log(`child process exited with code ${code}`);
-    // });
   }
 }
