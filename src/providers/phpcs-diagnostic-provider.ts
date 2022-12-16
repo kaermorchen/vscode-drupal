@@ -47,8 +47,10 @@ export default class PHPCSDiagnosticProvider {
     this.connection.onInitialize((params: InitializeParams) => {
       const capabilities = params.capabilities;
 
-      this.hasConfigurationCapability = capabilities?.workspace?.configuration ?? false;
-      this.hasWorkspaceFolderCapability = capabilities?.workspace?.workspaceFolders ?? false;
+      this.hasConfigurationCapability =
+        capabilities?.workspace?.configuration ?? false;
+      this.hasWorkspaceFolderCapability =
+        capabilities?.workspace?.workspaceFolders ?? false;
 
       const result: InitializeResult = {
         capabilities: {
@@ -93,6 +95,7 @@ export default class PHPCSDiagnosticProvider {
     this.documents.onDidChangeContent((event) => {
       this.validate(event.document);
     });
+
     this.documents.listen(this.connection);
   }
 
@@ -101,13 +104,19 @@ export default class PHPCSDiagnosticProvider {
   }
 
   get phpcsPath() {
-    return join('vendor', 'bin', 'phpcs');
+    return join('vendor', 'bin', this.name);
   }
 
-  validate(document: TextDocument): void {
+  get settings() {
+    return this.connection.workspace.getConfiguration(
+      `vscode-drupal.diagnostic.${this.name}`
+    );
+  }
+
+  async validate(document: TextDocument) {
     const uri = document.uri;
     const filePath = URI.parse(uri).path;
-    // TODO: read arguments from settings and environment
+    const config = await this.settings;
     const spawnOptions = {
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
@@ -118,7 +127,7 @@ export default class PHPCSDiagnosticProvider {
       '-q',
       `--encoding=UTF-8`,
       `--stdin-path=${filePath}`,
-      `--standard=Drupal,DrupalPractice`,
+      `--standard=${config.standard}`,
       '-',
     ];
     // TODO: add abort signal

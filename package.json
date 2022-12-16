@@ -23,6 +23,12 @@
           "default": true,
           "markdownDescription": "Whether [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) is enabled."
         },
+        "vscode-drupal.diagnostic.phpcs.standard": {
+          "scope": "resource",
+          "type": "string",
+          "default": "Drupal,DrupalPractice",
+          "markdownDescription": "The name or path of the coding standard to use"
+        },
         "vscode-drupal.trace.server": {
           "scope": "window",
           "type": "string",
