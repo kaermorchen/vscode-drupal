@@ -5,6 +5,8 @@ import {
   Diagnostic,
   DiagnosticSeverity,
   DidChangeConfigurationNotification,
+  DidChangeConfigurationParams,
+  Disposable,
   InitializeParams,
   InitializeResult,
   TextDocuments,
@@ -30,93 +32,120 @@ interface LinterMessage {
   column: number;
 }
 
+interface Config {
+  enabled: boolean;
+  standard: string;
+}
+
+const defaultSettings: Config = {
+  enabled: true,
+  standard: 'Drupal,DrupalPractice',
+};
+
 export default class PHPCSDiagnosticProvider {
   name = 'phpcs';
-  documents = new TextDocuments(TextDocument);
   connection: Connection;
+  documents!: TextDocuments<TextDocument>;
   hasConfigurationCapability = false;
   hasWorkspaceFolderCapability = false;
+  subscriptions: Disposable[] = [];
+  config!: Config;
 
   constructor(connection: Connection) {
     this.connection = connection;
 
-    this.init();
+    this.connection.onInitialize(this.onInitialize.bind(this));
+    this.connection.onInitialized(this.onInitialized.bind(this));
+    this.connection.onDidChangeConfiguration(this.updateConfig.bind(this));
   }
 
-  init(): void {
-    this.connection.onInitialize((params: InitializeParams) => {
-      const capabilities = params.capabilities;
+  onInitialize(params: InitializeParams) {
+    console.log('onInitialize');
+    const workspace = params.capabilities?.workspace;
 
-      this.hasConfigurationCapability =
-        capabilities?.workspace?.configuration ?? false;
-      this.hasWorkspaceFolderCapability =
-        capabilities?.workspace?.workspaceFolders ?? false;
+    this.hasConfigurationCapability = workspace?.configuration ?? false;
+    this.hasWorkspaceFolderCapability = workspace?.workspaceFolders ?? false;
 
-      const result: InitializeResult = {
-        capabilities: {
-          textDocumentSync: {
-            openClose: true,
-            save: true,
-            change: TextDocumentSyncKind.Full,
-          },
+    const result: InitializeResult = {
+      capabilities: {
+        textDocumentSync: TextDocumentSyncKind.Full,
+      },
+    };
+
+    if (this.hasWorkspaceFolderCapability) {
+      result.capabilities.workspace = {
+        workspaceFolders: {
+          supported: true,
         },
       };
+    }
 
-      if (this.hasWorkspaceFolderCapability) {
-        result.capabilities.workspace = {
-          workspaceFolders: {
-            supported: true,
-          },
-        };
-      }
+    return result;
+  }
 
-      return result;
+  onInitialized() {
+    console.log('onInitialized');
+    if (this.hasConfigurationCapability) {
+      this.connection.client.register(DidChangeConfigurationNotification.type);
+    }
+
+    this.updateConfig();
+  }
+
+  async updateConfig() {
+    this.config = await this.connection.workspace.getConfiguration(this.configName);
+
+    console.log('updateConfig', this.config);
+
+    this.toggleProvider();
+  }
+
+  toggleProvider() {
+    console.log('toggleProvider');
+    if (this.config.enabled) {
+      this.setup();
+    } else {
+      this.shutdown();
+    }
+  }
+
+  setup(): void {
+    console.log('setup');
+    this.documents = new TextDocuments(TextDocument);
+
+    const changeLister = this.documents.onDidChangeContent((e) =>
+      this.validate(e.document)
+    );
+    const documentsLister = this.documents.listen(this.connection);
+
+    this.subscriptions.push(changeLister, documentsLister);
+
+    this.documents.all().forEach((document) => this.validate(document));
+  }
+
+  shutdown(): void {
+    console.log('shutdown');
+    this.subscriptions.forEach((item) => item.dispose());
+    this.subscriptions = [];
+
+    this.documents.all().forEach((document) => {
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
     });
-
-    this.connection.onInitialized(() => {
-      if (this.hasConfigurationCapability) {
-        this.connection.client.register(
-          DidChangeConfigurationNotification.type
-        );
-      }
-      // if (this.hasWorkspaceFolderCapability) {
-      //   this.connection.workspace.onDidChangeWorkspaceFolders((_event) => {
-      //     this.connection.console.log(
-      //       'Workspace folder change event received.'
-      //     );
-      //   });
-      // }
-    });
-
-    this.connection.onDidChangeConfiguration(() => {
-      this.documents.all().forEach(this.validate, this);
-    });
-
-    this.documents.onDidChangeContent((event) => {
-      this.validate(event.document);
-    });
-
-    this.documents.listen(this.connection);
   }
 
   get source() {
     return `Drupal: ${this.name}`;
   }
 
-  get phpcsPath() {
-    return join('vendor', 'bin', this.name);
-  }
-
-  get settings() {
-    return this.connection.workspace.getConfiguration(
-      `vscode-drupal.diagnostic.${this.name}`
-    );
+  get configName() {
+    return `vscode-drupal.diagnostic.${this.name}`;
   }
 
   async validate(document: TextDocument) {
+    console.log('validate');
+
     const uri = document.uri;
     const filePath = URI.parse(uri).path;
-    const config = await this.settings;
     const spawnOptions = {
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
@@ -127,7 +156,7 @@ export default class PHPCSDiagnosticProvider {
       '-q',
       `--encoding=UTF-8`,
       `--stdin-path=${filePath}`,
-      `--standard=${config.standard}`,
+      `--standard=${this.config.standard}`,
       '-',
     ];
     // TODO: add abort signal
@@ -164,5 +193,9 @@ export default class PHPCSDiagnosticProvider {
     phpcs.stderr.on('data', (data) => {
       this.connection.console.error(`stderr: ${data}`);
     });
+  }
+
+  get phpcsPath() {
+    return join('vendor', 'bin', this.name);
   }
 }
