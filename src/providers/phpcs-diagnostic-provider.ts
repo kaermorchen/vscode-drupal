@@ -34,13 +34,8 @@ interface LinterMessage {
 
 interface Config {
   enabled: boolean;
-  standard: string;
+  arguments: string;
 }
-
-// const defaultSettings: Config = {
-//   enabled: true,
-//   standard: 'Drupal,DrupalPractice',
-// };
 
 export default class PHPCSDiagnosticProvider {
   name = 'phpcs';
@@ -133,7 +128,7 @@ export default class PHPCSDiagnosticProvider {
   }
 
   get configName() {
-    return `vscode-drupal.diagnostic.${this.name}`;
+    return `vscode-drupal.diagnostics.${this.name}`;
   }
 
   async validate(document: TextDocument) {
@@ -153,11 +148,10 @@ export default class PHPCSDiagnosticProvider {
     };
     const args = [
       this.phpcsPath,
-      '--report=json',
       '-q',
-      `--encoding=UTF-8`,
+      '--report=json',
       `--stdin-path=${filePath}`,
-      `--standard=${config.standard}`,
+      '--standard=Drupal,DrupalPractice',
       '-',
     ];
     // TODO: add abort signal

@@ -14,34 +14,36 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "configuration": {
-      "title": "Drupal",
-      "properties": {
-        "vscode-drupal.diagnostic.phpcs.enabled": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Whether [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) is enabled."
-        },
-        "vscode-drupal.diagnostic.phpcs.standard": {
-          "scope": "resource",
-          "type": "string",
-          "default": "Drupal,DrupalPractice",
-          "markdownDescription": "The name or path of the coding standard to use"
-        },
-        "vscode-drupal.trace.server": {
-          "scope": "window",
-          "type": "string",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "default": "off",
-          "description": "Traces the communication between VS Code and the language server. This setting is helpful for debugging."
+    "configuration": [
+      {
+        "title": "Drupal",
+        "properties": {
+          "vscode-drupal.trace.server": {
+            "scope": "window",
+            "type": "string",
+            "enum": [
+              "off",
+              "messages",
+              "verbose"
+            ],
+            "default": "off",
+            "description": "Traces the communication between VS Code and the language server. This setting is helpful for debugging."
+          }
+        }
+      },
+      {
+        "title": "PHP_CodeSniffer",
+        "properties": {
+          "vscode-drupal.diagnostics.phpcs.enabled": {
+            "order": 1,
+            "scope": "resource",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Whether [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) is enabled."
+          }
         }
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
