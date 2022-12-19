@@ -5,10 +5,10 @@ import {
   Diagnostic,
   DiagnosticSeverity,
   DidChangeConfigurationNotification,
-  DidChangeConfigurationParams,
   Disposable,
   InitializeParams,
   InitializeResult,
+  TextDocumentChangeEvent,
   TextDocuments,
   TextDocumentSyncKind,
 } from 'vscode-languageserver';
@@ -37,10 +37,10 @@ interface Config {
   standard: string;
 }
 
-const defaultSettings: Config = {
-  enabled: true,
-  standard: 'Drupal,DrupalPractice',
-};
+// const defaultSettings: Config = {
+//   enabled: true,
+//   standard: 'Drupal,DrupalPractice',
+// };
 
 export default class PHPCSDiagnosticProvider {
   name = 'phpcs';
@@ -48,15 +48,19 @@ export default class PHPCSDiagnosticProvider {
   documents!: TextDocuments<TextDocument>;
   hasConfigurationCapability = false;
   hasWorkspaceFolderCapability = false;
-  subscriptions: Disposable[] = [];
-  config!: Config;
+  listeners: Disposable[] = [];
 
   constructor(connection: Connection) {
     this.connection = connection;
-
     this.connection.onInitialize(this.onInitialize.bind(this));
     this.connection.onInitialized(this.onInitialized.bind(this));
-    this.connection.onDidChangeConfiguration(this.updateConfig.bind(this));
+    this.connection.onDidChangeConfiguration(
+      this.onDidChangeConfiguration.bind(this)
+    );
+
+    this.documents = new TextDocuments(TextDocument);
+    this.documents.listen(this.connection);
+    this.documents.onDidChangeContent(this.onDidChangeContent.bind(this));
   }
 
   onInitialize(params: InitializeParams) {
@@ -83,54 +87,45 @@ export default class PHPCSDiagnosticProvider {
     return result;
   }
 
-  onInitialized() {
+  async onInitialized() {
     console.log('onInitialized');
     if (this.hasConfigurationCapability) {
       this.connection.client.register(DidChangeConfigurationNotification.type);
     }
-
-    this.updateConfig();
   }
 
-  async updateConfig() {
-    this.config = await this.connection.workspace.getConfiguration(this.configName);
-
-    console.log('updateConfig', this.config);
-
-    this.toggleProvider();
+  onDidChangeContent(e: TextDocumentChangeEvent<TextDocument>) {
+    console.log('onDidChangeContent');
+    this.validate(e.document);
   }
 
-  toggleProvider() {
-    console.log('toggleProvider');
-    if (this.config.enabled) {
-      this.setup();
+  async onDidChangeConfiguration() {
+    console.log('updateConfig');
+
+    this._config = null;
+
+    const config = await this.config;
+
+    if (config.enabled) {
+      this.documents.all().forEach(this.validate, this);
     } else {
-      this.shutdown();
+      this.clearDiagnostics();
     }
   }
 
-  setup(): void {
-    console.log('setup');
-    this.documents = new TextDocuments(TextDocument);
-
-    const changeLister = this.documents.onDidChangeContent((e) =>
-      this.validate(e.document)
-    );
-    const documentsLister = this.documents.listen(this.connection);
-
-    this.subscriptions.push(changeLister, documentsLister);
-
-    this.documents.all().forEach((document) => this.validate(document));
+  clearDiagnostics() {
+    this.documents.all().forEach(({ uri }) => {
+      this.connection.sendDiagnostics({ uri, diagnostics: [] });
+    });
   }
 
-  shutdown(): void {
-    console.log('shutdown');
-    this.subscriptions.forEach((item) => item.dispose());
-    this.subscriptions = [];
-
-    this.documents.all().forEach((document) => {
-      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
-    });
+  private _config: Config | null = null; //Cache for getter config
+  get config(): Promise<Config> {
+    if (this._config) {
+      return Promise.resolve(this._config);
+    } else {
+      return this.connection.workspace.getConfiguration(this.configName);
+    }
   }
 
   get source() {
@@ -142,7 +137,13 @@ export default class PHPCSDiagnosticProvider {
   }
 
   async validate(document: TextDocument) {
-    console.log('validate');
+    const config = await this.config;
+
+    console.log('validate', config);
+
+    if (!config.enabled) {
+      return;
+    }
 
     const uri = document.uri;
     const filePath = URI.parse(uri).path;
@@ -156,7 +157,7 @@ export default class PHPCSDiagnosticProvider {
       '-q',
       `--encoding=UTF-8`,
       `--stdin-path=${filePath}`,
-      `--standard=${this.config.standard}`,
+      `--standard=${config.standard}`,
       '-',
     ];
     // TODO: add abort signal
