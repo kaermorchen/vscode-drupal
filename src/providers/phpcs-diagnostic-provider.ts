@@ -59,7 +59,6 @@ export default class PHPCSDiagnosticProvider {
   }
 
   onInitialize(params: InitializeParams) {
-    console.log('onInitialize');
     const workspace = params.capabilities?.workspace;
 
     this.hasConfigurationCapability = workspace?.configuration ?? false;
@@ -83,20 +82,16 @@ export default class PHPCSDiagnosticProvider {
   }
 
   async onInitialized() {
-    console.log('onInitialized');
     if (this.hasConfigurationCapability) {
       this.connection.client.register(DidChangeConfigurationNotification.type);
     }
   }
 
   onDidChangeContent(e: TextDocumentChangeEvent<TextDocument>) {
-    console.log('onDidChangeContent');
     this.validate(e.document);
   }
 
   async onDidChangeConfiguration() {
-    console.log('updateConfig');
-
     this._config = null;
 
     const config = await this.config;
@@ -133,8 +128,6 @@ export default class PHPCSDiagnosticProvider {
 
   async validate(document: TextDocument) {
     const config = await this.config;
-
-    console.log('validate', config);
 
     if (!config.enabled) {
       return;
