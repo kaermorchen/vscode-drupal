@@ -129,7 +129,7 @@ export default class PHPCSDiagnosticProvider {
   }
 
   get configName() {
-    return `vscode-drupal.diagnostics.${this.name}`;
+    return `drupal.diagnostics.${this.name}`;
   }
 
   async validate(document: TextDocument) {

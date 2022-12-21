@@ -24,7 +24,7 @@ export function activate(context: ExtensionContext) {
   };
 
   client = new LanguageClient(
-    'vscode-drupal',
+    'drupal',
     'Drupal',
     serverOptions,
     clientOptions

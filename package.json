@@ -18,7 +18,7 @@
       {
         "title": "Drupal",
         "properties": {
-          "vscode-drupal.trace.server": {
+          "drupal.trace.server": {
             "scope": "window",
             "type": "string",
             "enum": [
@@ -34,12 +34,12 @@
       {
         "title": "PHP_CodeSniffer",
         "properties": {
-          "vscode-drupal.diagnostics.phpcs.enabled": {
+          "drupal.diagnostics.phpcs.enabled": {
             "order": 1,
             "scope": "resource",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Whether [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) is enabled."
+            "markdownDescription": "Enables [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)"
           }
         }
       }
