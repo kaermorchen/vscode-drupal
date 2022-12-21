@@ -113,9 +113,15 @@ export default class PHPCSDiagnosticProvider {
   get config(): Promise<Config> {
     if (this._config) {
       return Promise.resolve(this._config);
-    } else {
-      return this.connection.workspace.getConfiguration(this.configName);
     }
+
+    return this.connection.workspace
+      .getConfiguration(this.configName)
+      .then((config) => {
+        this._config = config;
+
+        return config;
+      });
   }
 
   get source() {
