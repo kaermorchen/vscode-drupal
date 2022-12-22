@@ -14,6 +14,21 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "php",
+        "extensions": [
+          ".engine",
+          ".inc",
+          ".install",
+          ".module",
+          ".php",
+          ".profile",
+          ".sh",
+          ".theme"
+        ]
+      }
+    ],
     "configuration": [
       {
         "title": "Drupal",
