@@ -2,13 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Attach by Process ID",
-      "processId": "${command:PickProcess}",
+      "name": "Server",
+      "type": "node",
       "request": "attach",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "type": "node"
+      "port": 6009,
+      "restart": true,
+      "outFiles": [
+        "${workspaceRoot}/out/**/*.js"
+      ]
     },
     {
       "name": "Extension",
@@ -22,5 +23,14 @@
       ],
       "preLaunchTask": "npm: watch"
     },
+  ],
+  "compounds": [
+    {
+      "name": "Client + Server",
+      "configurations": [
+        "Extension",
+        "Server"
+      ]
+    }
   ]
 }
