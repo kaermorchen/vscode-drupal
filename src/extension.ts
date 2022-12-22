@@ -11,11 +11,13 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
   const serverModule = context.asAbsolutePath(join('out', 'server.js'));
+  const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: {
       module: serverModule,
       transport: TransportKind.ipc,
+      options: debugOptions
     },
   };
 
