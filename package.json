@@ -25,6 +25,7 @@
           ".php",
           ".profile",
           ".sh",
+          ".test",
           ".theme"
         ]
       }
