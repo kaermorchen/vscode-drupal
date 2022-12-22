@@ -3,61 +3,46 @@ import {
   CompletionItemKind,
   Connection,
   InitializeResult,
+  TextDocumentPositionParams,
+  TextDocuments,
 } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export default class HookCompletionProvider {
   name = 'hook';
   connection: Connection;
+  documents!: TextDocuments<TextDocument>;
 
   constructor(connection: Connection) {
     this.connection = connection;
     this.connection.onInitialize(this.onInitialize.bind(this));
     this.connection.onCompletion(this.onCompletion.bind(this));
-    this.connection.onCompletionResolve(this.onCompletionResolve.bind(this));
+
+    this.documents = new TextDocuments(TextDocument);
+    this.documents.listen(this.connection);
   }
 
   onInitialize(): InitializeResult {
     return {
       capabilities: {
         completionProvider: {
-          resolveProvider: true,
+          resolveProvider: false,
         },
       },
     };
   }
 
-  onCompletion(): CompletionItem[] {
-    // The pass parameter contains the position of the text document in
-    // which code complete got requested. For the example we ignore this
-    // info and always provide the same completion items.
-    return [
-      {
-        label: 'TypeScript',
-        kind: CompletionItemKind.Text,
-        data: 1,
-      },
-      {
-        label: 'JavaScript',
-        kind: CompletionItemKind.Text,
-        data: 2,
-      },
-    ];
-  }
+  onCompletion(
+    textDocumentPosition: TextDocumentPositionParams
+  ): CompletionItem[] {
+    const document = this.documents.get(
+      textDocumentPosition.textDocument.uri.toString()
+    );
 
-  // This handler resolves additional information for the item selected in
-  // the completion list.
-  onCompletionResolve(item: CompletionItem): CompletionItem {
-    if (item.data === 1) {
-      item.detail = 'TypeScript details';
-      item.documentation = 'TypeScript documentation';
-    } else if (item.data === 2) {
-      item.detail = 'JavaScript details';
-      item.documentation = 'JavaScript documentation';
+    if (typeof document === 'undefined' || document?.languageId !== 'php') {
+      return [];
     }
-    return item;
-  }
 
-  get configName() {
-    return `drupal.completions.${this.name}`;
+    return [];
   }
 }
