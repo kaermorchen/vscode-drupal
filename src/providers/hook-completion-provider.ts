@@ -39,7 +39,7 @@ export default class HookCompletionProvider {
       textDocumentPosition.textDocument.uri.toString()
     );
 
-    if (typeof document === 'undefined' || document?.languageId !== 'php') {
+    if (typeof document === 'undefined' || document.languageId !== 'php') {
       return [];
     }
 
