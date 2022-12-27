@@ -1,7 +1,4 @@
-import {
-  createConnection,
-  ProposedFeatures,
-} from 'vscode-languageserver/node';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import HookCompletionProvider from './providers/hook-completion-provider';
 // import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic-provider';
 
