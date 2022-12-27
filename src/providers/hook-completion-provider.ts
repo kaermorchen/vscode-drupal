@@ -4,12 +4,17 @@ import {
   CompletionItemKind,
   Connection,
   InitializeResult,
+  InsertTextFormat,
   TextDocumentPositionParams,
   TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Engine, Function as ASTFunction } from 'php-parser';
+import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
 import DocParser from 'doc-parser';
+
+const NODE_COMPLETION_ITEM = <const>{
+  function: CompletionItemKind.Function,
+};
 
 const phpParser = new Engine({
   parser: {
@@ -20,9 +25,16 @@ const phpParser = new Engine({
     withPositions: true,
     withSource: true,
   },
+  lexer: {
+    all_tokens: true,
+  },
 });
 
 const docParser = new DocParser();
+
+function getName(val: string | Identifier) {
+  return typeof val === 'string' ? val : val.name;
+}
 
 export default class HookCompletionProvider {
   name = 'hook';
@@ -82,13 +94,31 @@ export default class HookCompletionProvider {
           }
 
           const ast = docParser.parse(lastComment.value);
-          const label =
-            typeof func.name === 'string' ? func.name : func.name.name;
+          const hookName = getName(func.name);
+          const name = getName(func.name);
+          const args = func.arguments.map((item) =>
+            // Replace full import to last part
+            item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
+          );
+          const kind = NODE_COMPLETION_ITEM[item.kind];
+          const detail = `${name}(${args.join(', ')})`;
+          const documentation = ast.summary;
+          let funcName = item.loc?.source;
+          if (funcName) {
+            funcName = funcName.replace(/\$/g, '\\$');
+          }
+          const insertText = `/**\n * Implements ${hookName}().\n */\n${funcName} {\n\t$0\n}`;
 
           completions.push({
-            label,
-            kind: CompletionItemKind.Function,
-            documentation: ast.summary,
+            label: getName(func.name),
+            kind,
+            detail,
+            documentation,
+            insertText,
+            insertTextFormat: InsertTextFormat.Snippet,
+            sortText: '-1',
+            // filterText: 'dummy',
+            // preselect: true,
           });
           break;
         }
