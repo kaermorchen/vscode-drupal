@@ -4,10 +4,11 @@ import {
   CompletionItemKind,
   Connection,
   InitializeResult,
-  InitializeParams,
   InsertTextFormat,
   TextDocumentPositionParams,
   TextDocuments,
+  MarkupContent,
+  MarkupKind,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
@@ -85,6 +86,7 @@ export default class HookCompletionProvider {
       return;
     }
 
+    // TODO: read all workspaces?
     const workspacePath = URI.parse(workspaceFolders[0].uri).path;
     const moduleDirs = [
       'web/core/modules',
@@ -141,6 +143,13 @@ export default class HookCompletionProvider {
         `function ${machineName}_`
       );
 
+      if (typeof newItem.documentation === 'object') {
+        newItem.documentation.value = newItem.documentation.value.replace(
+          /function hook_/,
+          `function ${machineName}_`
+        );
+      }
+
       return newItem;
     });
 
@@ -160,26 +169,33 @@ export default class HookCompletionProvider {
           const func: ASTFunction = item as ASTFunction;
           const lastComment = item.leadingComments?.pop();
           const name = getName(func.name);
-          let documentation;
+          let documentation: MarkupContent | undefined;
 
           if (/^hook_/.test(name) === false) {
             break;
           }
 
-          if (lastComment) {
-            const ast = docParser.parse(lastComment.value);
-            // TODO: add colors
-            documentation = ast.summary;
-          }
-
-          const args = func.arguments.map((item) =>
-            // Replace full import to last part
-            item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
-          );
           const kind = NODE_COMPLETION_ITEM[item.kind];
-          const funcName = (item.loc?.source ?? name).replace(/\$/g, '\\$');
-          const insertText = `/**\n * Implements ${name}().\n */\n${funcName} {\n\t$0\n}`;
-          const detail = `${funcName}(${args.join(', ')})`;
+          const funcCall = (item.loc?.source ?? name).replace(/\$/g, '\\$');
+          const insertText = `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`;
+          const detail = `Implements ${name}`;
+
+          if (lastComment) {
+            const args = func.arguments.map((item) =>
+              // Replace full import to last part
+              item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
+            );
+            const ast = docParser.parse(lastComment.value);
+            const value = [
+              '```php',
+              '<?php', //TODO: remove when vscode will support php syntax highlighting without this
+              `function ${name}(${args.join(', ')}) {}`,
+              '```',
+              ast.summary,
+            ].join('\n');
+
+            documentation = { kind: MarkupKind.Markdown, value };
+          }
 
           completions.push({
             label: name,
