@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import { ExtensionContext } from 'vscode';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -17,7 +17,7 @@ export function activate(context: ExtensionContext) {
     debug: {
       module: serverModule,
       transport: TransportKind.ipc,
-      options: debugOptions
+      options: debugOptions,
     },
   };
 
@@ -25,13 +25,7 @@ export function activate(context: ExtensionContext) {
     documentSelector: [{ language: 'php', scheme: 'file' }],
   };
 
-  client = new LanguageClient(
-    'drupal',
-    'Drupal',
-    serverOptions,
-    clientOptions
-  );
-
+  client = new LanguageClient('drupal', 'Drupal', serverOptions, clientOptions);
   client.start();
 }
 

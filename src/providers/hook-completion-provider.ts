@@ -11,6 +11,8 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
 import DocParser from 'doc-parser';
+import getModuleMachineName from '../utils/get-module-machine-name';
+import { URI } from 'vscode-uri';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
@@ -63,25 +65,30 @@ export default class HookCompletionProvider {
   async onCompletion(
     textDocumentPosition: TextDocumentPositionParams
   ): Promise<CompletionItem[]> {
-    const document = this.documents.get(
-      textDocumentPosition.textDocument.uri.toString()
-    );
+    const uri = textDocumentPosition.textDocument.uri.toString();
+    const document = this.documents.get(uri);
 
     if (typeof document === 'undefined' || document.languageId !== 'php') {
       return [];
     }
 
-    const file =
-      '/root/projects/drupal-test-project/web/core/modules/tour/tour.api.php';
+    const filePath = URI.parse(uri).path;
+    const machineName = await getModuleMachineName(filePath);
 
-    return await this.getFileCompletions(file);
+    if (!machineName) {
+      return [];
+    }
+
+    const file =
+      '/root/projects/drupal-test-project/web/core/modules/update/update.api.php';
+
+    return await this.getFileCompletions(file, machineName);
   }
 
-  async getFileCompletions(filePath: string) {
+  async getFileCompletions(filePath: string, machineName: string) {
+    const completions: CompletionItem[] = [];
     const text = await readFile(filePath, 'utf8');
     const tree = await phpParser.parseCode(text, filePath);
-
-    const completions: CompletionItem[] = [];
 
     tree.children.forEach((item) => {
       switch (item.kind) {
@@ -105,12 +112,14 @@ export default class HookCompletionProvider {
           const documentation = ast.summary;
           let funcName = item.loc?.source;
           if (funcName) {
-            funcName = funcName.replace(/\$/g, '\\$');
+            funcName = funcName
+              .replace(/\$/g, '\\$')
+              .replace(/ hook_/, ` ${machineName}_`);
           }
           const insertText = `/**\n * Implements ${hookName}().\n */\n${funcName} {\n\t$0\n}`;
 
           completions.push({
-            label: getName(func.name),
+            label: name,
             kind,
             detail,
             documentation,
