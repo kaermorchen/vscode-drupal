@@ -1,9 +1,10 @@
-import { readFile } from 'fs/promises';
+import { readFile, access, readdir } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
   Connection,
   InitializeResult,
+  InitializeParams,
   InsertTextFormat,
   TextDocumentPositionParams,
   TextDocuments,
@@ -13,6 +14,8 @@ import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
 import DocParser from 'doc-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
+import { join } from 'path';
+import { constants } from 'fs';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
@@ -41,11 +44,13 @@ function getName(val: string | Identifier) {
 export default class HookCompletionProvider {
   name = 'hook';
   connection: Connection;
-  documents!: TextDocuments<TextDocument>;
+  documents: TextDocuments<TextDocument>;
+  apiCompletion: CompletionItem[] = [];
 
   constructor(connection: Connection) {
     this.connection = connection;
     this.connection.onInitialize(this.onInitialize.bind(this));
+    this.connection.onInitialized(this.onInitialized.bind(this));
     this.connection.onCompletion(this.onCompletion.bind(this));
 
     this.documents = new TextDocuments(TextDocument);
@@ -58,8 +63,50 @@ export default class HookCompletionProvider {
         completionProvider: {
           resolveProvider: false,
         },
+        workspace: {
+          workspaceFolders: {
+            supported: true,
+          },
+        },
       },
     };
+  }
+
+  onInitialized() {
+    this.parseApiFiles();
+  }
+
+  async parseApiFiles() {
+    const workspaceFolders =
+      await this.connection.workspace.getWorkspaceFolders();
+
+    if (workspaceFolders === null) {
+      return;
+    }
+
+    const workspacePath = URI.parse(workspaceFolders[0].uri).path;
+    const moduleDirs = [
+      'web/core/modules',
+      'web/modules/contrib',
+      'web/modules/custom',
+    ];
+
+    for (const path of moduleDirs) {
+      const modules = await readdir(path);
+
+      for (const dir of modules) {
+        const apiFilePath = join(workspacePath, path, dir, `${dir}.api.php`);
+
+        try {
+          await access(apiFilePath, constants.R_OK);
+          const completions = await this.getFileCompletions(apiFilePath);
+
+          if (completions.length) {
+            this.apiCompletion.push(...completions);
+          }
+        } catch {}
+      }
+    }
   }
 
   async onCompletion(
@@ -76,19 +123,27 @@ export default class HookCompletionProvider {
     const machineName = await getModuleMachineName(filePath);
 
     if (!machineName) {
-      return [];
+      return this.apiCompletion;
     }
 
-    const file =
-      '/root/projects/drupal-test-project/web/core/modules/update/update.api.php';
+    const apiCompletionWithMachineName = this.apiCompletion.map((item) => {
+      const newItem = Object.assign({}, item);
 
-    return await this.getFileCompletions(file, machineName);
+      newItem.insertText = newItem.insertText?.replace(
+        /function hook_/,
+        `function ${machineName}_`
+      );
+
+      return newItem;
+    });
+
+    return apiCompletionWithMachineName;
   }
 
-  async getFileCompletions(filePath: string, machineName: string) {
+  async getFileCompletions(filePath: string) {
     const completions: CompletionItem[] = [];
     const text = await readFile(filePath, 'utf8');
-    const tree = await phpParser.parseCode(text, filePath);
+    const tree = phpParser.parseCode(text, filePath);
 
     tree.children.forEach((item) => {
       switch (item.kind) {
@@ -104,6 +159,7 @@ export default class HookCompletionProvider {
 
           if (lastComment) {
             const ast = docParser.parse(lastComment.value);
+            // TODO: add colors
             documentation = ast.summary;
           }
 
@@ -112,12 +168,7 @@ export default class HookCompletionProvider {
             item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
           );
           const kind = NODE_COMPLETION_ITEM[item.kind];
-          let funcName = item.loc?.source ?? name;
-          if (funcName) {
-            funcName = funcName
-              .replace(/\$/g, '\\$')
-              .replace(/ hook_/, ` ${machineName}_`);
-          }
+          const funcName = (item.loc?.source ?? name).replace(/\$/g, '\\$');
           const insertText = `/**\n * Implements ${name}().\n */\n${funcName} {\n\t$0\n}`;
           const detail = `${funcName}(${args.join(', ')})`;
 
