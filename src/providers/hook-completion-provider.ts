@@ -46,6 +46,7 @@ export default class HookCompletionProvider {
   connection: Connection;
   documents: TextDocuments<TextDocument>;
   apiCompletion: CompletionItem[] = [];
+  apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
   constructor(connection: Connection) {
     this.connection = connection;
@@ -120,6 +121,12 @@ export default class HookCompletionProvider {
     }
 
     const filePath = URI.parse(uri).path;
+    const cache = this.apiCompletionFileCache.get(filePath);
+
+    if (cache) {
+      return cache;
+    }
+
     const machineName = await getModuleMachineName(filePath);
 
     if (!machineName) {
@@ -136,6 +143,8 @@ export default class HookCompletionProvider {
 
       return newItem;
     });
+
+    this.apiCompletionFileCache.set(filePath, apiCompletionWithMachineName);
 
     return apiCompletionWithMachineName;
   }
