@@ -95,28 +95,31 @@ export default class HookCompletionProvider {
         case 'function': {
           const func: ASTFunction = item as ASTFunction;
           const lastComment = item.leadingComments?.pop();
+          const name = getName(func.name);
+          let documentation;
 
-          if (!lastComment) {
-            return;
+          if (/^hook_/.test(name) === false) {
+            break;
           }
 
-          const ast = docParser.parse(lastComment.value);
-          const hookName = getName(func.name);
-          const name = getName(func.name);
+          if (lastComment) {
+            const ast = docParser.parse(lastComment.value);
+            documentation = ast.summary;
+          }
+
           const args = func.arguments.map((item) =>
             // Replace full import to last part
             item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
           );
           const kind = NODE_COMPLETION_ITEM[item.kind];
-          const detail = `${name}(${args.join(', ')})`;
-          const documentation = ast.summary;
-          let funcName = item.loc?.source;
+          let funcName = item.loc?.source ?? name;
           if (funcName) {
             funcName = funcName
               .replace(/\$/g, '\\$')
               .replace(/ hook_/, ` ${machineName}_`);
           }
-          const insertText = `/**\n * Implements ${hookName}().\n */\n${funcName} {\n\t$0\n}`;
+          const insertText = `/**\n * Implements ${name}().\n */\n${funcName} {\n\t$0\n}`;
+          const detail = `${funcName}(${args.join(', ')})`;
 
           completions.push({
             label: name,
@@ -126,8 +129,6 @@ export default class HookCompletionProvider {
             insertText,
             insertTextFormat: InsertTextFormat.Snippet,
             sortText: '-1',
-            // filterText: 'dummy',
-            // preselect: true,
           });
           break;
         }
