@@ -17,6 +17,7 @@ import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
+import findFiles from '../utils/find-files';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
@@ -89,20 +90,18 @@ export default class HookCompletionProvider {
     // TODO: read all workspaces?
     const workspacePath = URI.parse(workspaceFolders[0].uri).path;
     const moduleDirs = [
-      'web/core/modules',
+      'web/core',
       'web/modules/contrib',
       'web/modules/custom',
     ];
 
     for (const path of moduleDirs) {
-      const modules = await readdir(path);
+      const files = await findFiles(join(workspacePath, path), /.api.php$/);
 
-      for (const dir of modules) {
-        const apiFilePath = join(workspacePath, path, dir, `${dir}.api.php`);
-
+      for (const file of files) {
         try {
-          await access(apiFilePath, constants.R_OK);
-          const completions = await this.getFileCompletions(apiFilePath);
+          await access(file, constants.R_OK);
+          const completions = await this.getFileCompletions(file);
 
           if (completions.length) {
             this.apiCompletion.push(...completions);
@@ -137,16 +136,18 @@ export default class HookCompletionProvider {
 
     const apiCompletionWithMachineName = this.apiCompletion.map((item) => {
       const newItem = Object.assign({}, item);
+      const searchValue = 'function hook_';
+      const replaceValue = `function ${machineName}_`;
 
       newItem.insertText = newItem.insertText?.replace(
-        /function hook_/,
-        `function ${machineName}_`
+        searchValue,
+        replaceValue
       );
 
       if (typeof newItem.documentation === 'object') {
         newItem.documentation.value = newItem.documentation.value.replace(
-          /function hook_/,
-          `function ${machineName}_`
+          searchValue,
+          replaceValue
         );
       }
 
