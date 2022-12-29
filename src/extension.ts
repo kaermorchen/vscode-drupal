@@ -22,7 +22,10 @@ export function activate(context: ExtensionContext) {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ language: 'php', scheme: 'file' }],
+    documentSelector: [
+      { language: 'php', scheme: 'file' },
+      { language: 'twig', scheme: 'file' },
+    ],
   };
 
   client = new LanguageClient('drupal', 'Drupal', serverOptions, clientOptions);
