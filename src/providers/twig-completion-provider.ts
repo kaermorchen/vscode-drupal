@@ -112,6 +112,13 @@ export default class TwigCompletionProvider {
   async onCompletion(
     textDocumentPosition: TextDocumentPositionParams
   ): Promise<CompletionItem[]> {
+    const uri = textDocumentPosition.textDocument.uri.toString();
+    const document = this.documents.get(uri);
+
+    if (typeof document === 'undefined' || document.languageId !== 'twig') {
+      return [];
+    }
+
     return this.apiCompletion;
   }
 
