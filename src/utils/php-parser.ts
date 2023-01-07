@@ -1,6 +1,6 @@
 import { Engine } from 'php-parser';
 
-export const phpParser = new Engine({
+const phpParser = new Engine({
   parser: {
     extractTokens: true,
     extractDoc: true,
@@ -13,3 +13,5 @@ export const phpParser = new Engine({
     all_tokens: true,
   },
 });
+
+export default phpParser;

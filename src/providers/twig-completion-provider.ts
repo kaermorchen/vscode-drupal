@@ -1,4 +1,4 @@
-import { readFile, access, readdir } from 'fs/promises';
+import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -7,31 +7,40 @@ import {
   InsertTextFormat,
   TextDocumentPositionParams,
   TextDocuments,
-  MarkupContent,
   MarkupKind,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
-import findFiles from '../utils/find-files';
 import {
   Class as ASTClass,
-  Function as ASTFunction,
   Identifier,
   Method,
   Namespace,
   Node,
 } from 'php-parser';
-import { phpParser } from '../utils/php-parser';
-import DocParser from 'doc-parser';
+import phpParser from '../utils/php-parser';
+import docParser from '../utils/doc-parser';
+
+const astFileCache = new Map<string, ASTClass>();
 
 function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
 }
 
-const docParser = new DocParser();
+const twigFunctions = [
+  {
+    label: 'render_var',
+    insertText: 'render_var(${1:any})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::renderVar`,
+  },
+  {
+    label: 'file_url',
+    insertText: 'file_url(${1:path})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getFileUrl`,
+  },
+];
 
 export default class TwigCompletionProvider {
   name = 'twig';
@@ -82,31 +91,37 @@ export default class TwigCompletionProvider {
 
   async parseFiles() {
     const workspacePath = await this.getWorkspacePath();
+    const completions = [];
 
     if (!workspacePath) {
       return;
     }
 
-    const file = join(
-      workspacePath,
-      'web',
-      'core',
-      'lib',
-      'Drupal',
-      'Core',
-      'Template',
-      'TwigExtension.php'
-    );
+    for (const item of twigFunctions) {
+      const [namespace, fnName] = item.callback.split('::');
+      const parts = namespace.split('\\');
+      const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
 
-    try {
-      await access(file, constants.R_OK);
+      try {
+        await access(file, constants.R_OK);
 
-      const completions = await this.getFileCompletions(file);
+        const completion: CompletionItem = {
+          label: item.label,
+          kind: CompletionItemKind.Function,
+          detail: `Drupal twig function ${item.label}`,
+          insertText: item.insertText,
+          insertTextFormat: InsertTextFormat.Snippet,
+        };
 
-      if (completions.length) {
-        this.apiCompletion.push(...completions);
-      }
-    } catch {}
+        const docblock = await this.getDocblock(file, fnName);
+
+        if (docblock) {
+          completion.documentation = docblock;
+        }
+
+        this.apiCompletion.push(completion);
+      } catch {}
+    }
   }
 
   async onCompletion(
@@ -122,61 +137,89 @@ export default class TwigCompletionProvider {
     return this.apiCompletion;
   }
 
-  async getFileCompletions(filePath: string) {
-    const completions: CompletionItem[] = [];
-    const twigFunctions = new Map([
-      ['renderVar', 'render_var'],
-      ['getUrl', 'url'],
-      ['getPath', 'path'],
-      ['getLink', 'link'],
-      ['getFileUrl', 'file_url'],
-      ['attachLibrary', 'attach_library'],
-      ['getActiveThemePath', 'active_theme_path'],
-      ['getActiveTheme', 'active_theme'],
-      ['createAttribute', 'create_attribute'],
-    ]);
-    const text = await readFile(filePath, 'utf8');
-    const tree = phpParser.parseCode(text, filePath);
-    const astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
+  async getDocblock(
+    filePath: string,
+    fnName: string
+  ): Promise<string | undefined> {
+    let astClass = astFileCache.get(filePath);
 
-    console.log(astClass);
-    astClass.body.forEach((item: Node) => {
+    if (!astClass) {
+      const text = await readFile(filePath, 'utf8');
+      const tree = phpParser.parseCode(text, filePath);
+
+      astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
+      astFileCache.set(filePath, astClass);
+    }
+
+    for (const item of astClass.body) {
       switch (item.kind) {
         case 'method': {
           const func: Method = item as Method;
           const name = getName(func.name);
-          const twigName = twigFunctions.get(name);
 
-          if (!twigName) {
+          if (name !== fnName) {
             break;
           }
 
-          const completion: CompletionItem = {
-            label: twigName,
-            kind: CompletionItemKind.Function,
-            detail: `Drupal twig function ${twigName}`,
-            insertText: twigName,
-            insertTextFormat: InsertTextFormat.Snippet,
-          };
-
-          const value = ['```twig', `{{ ${twigName} }}`, '```'];
           const lastComment = item.leadingComments?.pop();
 
           if (lastComment) {
-            value.push(lastComment.value);
+            const ast = docParser.parse(lastComment.value);
+
+            return ast.summary;
           }
 
-          completion.documentation = {
-            kind: MarkupKind.Markdown,
-            value: value.join('\n'),
-          };
-
-          completions.push(completion);
-          break;
+          return;
         }
       }
-    });
-
-    return completions;
+    }
   }
+
+  // async getFileCompletions(filePath: string) {
+  //   const completions: CompletionItem[] = [];
+
+  //   const text = await readFile(filePath, 'utf8');
+  //   const tree = phpParser.parseCode(text, filePath);
+  //   const astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
+
+  //   astClass.body.forEach((item: Node) => {
+  //     switch (item.kind) {
+  //       case 'method': {
+  //         const func: Method = item as Method;
+  //         const name = getName(func.name);
+  //         const twigName = twigFunctions.get(name);
+
+  //         if (!twigName) {
+  //           break;
+  //         }
+
+  //         const completion: CompletionItem = {
+  //           label: twigName,
+  //           kind: CompletionItemKind.Function,
+  //           detail: `Drupal twig function ${twigName}`,
+  //           insertText: twigName,
+  //           insertTextFormat: InsertTextFormat.Snippet,
+  //         };
+
+  //         const value = ['```twig', `{{ ${twigName} }}`, '```'];
+  //         const lastComment = item.leadingComments?.pop();
+
+  //         if (lastComment) {
+  //           const ast = docParser.parse(lastComment.value);
+  //           value.push(ast.summary);
+  //         }
+
+  //         completion.documentation = {
+  //           kind: MarkupKind.Markdown,
+  //           value: value.join('\n'),
+  //         };
+
+  //         completions.push(completion);
+  //         break;
+  //       }
+  //     }
+  //   });
+
+  //   return completions;
+  // }
 }

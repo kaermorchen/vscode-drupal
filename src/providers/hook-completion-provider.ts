@@ -1,4 +1,4 @@
-import { readFile, access, readdir } from 'fs/promises';
+import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -12,32 +12,17 @@ import {
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
-import DocParser from 'doc-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
 import findFiles from '../utils/find-files';
+import docParser from '../utils/doc-parser';
+import phpParser from '../utils/php-parser';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
 };
-
-const phpParser = new Engine({
-  parser: {
-    extractTokens: true,
-    extractDoc: true,
-  },
-  ast: {
-    withPositions: true,
-    withSource: true,
-  },
-  lexer: {
-    all_tokens: true,
-  },
-});
-
-const docParser = new DocParser();
 
 function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
