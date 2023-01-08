@@ -215,7 +215,7 @@ export default class TwigCompletionProvider {
     try {
       await access(file, constants.R_OK);
 
-      const completionItem: CompletionItem = Object.assign(item, {
+      const completionItem: CompletionItem = Object.assign({}, item, {
         kind: CompletionItemKind.Function,
         insertTextFormat: InsertTextFormat.Snippet,
       });
@@ -248,7 +248,15 @@ export default class TwigCompletionProvider {
       textDocumentPosition.position.character
     );
 
-    let apiCompletion = [...this.functionCompletion];
+    let apiCompletion;
+
+    if (/{{\s*/.test(linePrefix)) {
+      apiCompletion = [...this.functionCompletion];
+    } else {
+      apiCompletion = this.functionCompletion.map(item => Object.assign({}, item, {
+        insertText: `{{ ${item.insertText} }}`
+      }));
+    }
 
     if (/\|\s*/.test(linePrefix)) {
       apiCompletion = apiCompletion.concat(this.filterCompletion);
@@ -294,52 +302,4 @@ export default class TwigCompletionProvider {
       }
     }
   }
-
-  // async getFileCompletions(filePath: string) {
-  //   const completions: CompletionItem[] = [];
-
-  //   const text = await readFile(filePath, 'utf8');
-  //   const tree = phpParser.parseCode(text, filePath);
-  //   const astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
-
-  //   astClass.body.forEach((item: Node) => {
-  //     switch (item.kind) {
-  //       case 'method': {
-  //         const func: Method = item as Method;
-  //         const name = getName(func.name);
-  //         const twigName = twigFunctions.get(name);
-
-  //         if (!twigName) {
-  //           break;
-  //         }
-
-  //         const completion: CompletionItem = {
-  //           label: twigName,
-  //           kind: CompletionItemKind.Function,
-  //           detail: `Drupal twig function ${twigName}`,
-  //           insertText: twigName,
-  //           insertTextFormat: InsertTextFormat.Snippet,
-  //         };
-
-  //         const value = ['```twig', `{{ ${twigName} }}`, '```'];
-  //         const lastComment = item.leadingComments?.pop();
-
-  //         if (lastComment) {
-  //           const ast = docParser.parse(lastComment.value);
-  //           value.push(ast.summary);
-  //         }
-
-  //         completion.documentation = {
-  //           kind: MarkupKind.Markdown,
-  //           value: value.join('\n'),
-  //         };
-
-  //         completions.push(completion);
-  //         break;
-  //       }
-  //     }
-  //   });
-
-  //   return completions;
-  // }
 }
