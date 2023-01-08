@@ -36,11 +36,47 @@ const twigFunctions = [
     callback: `\\Drupal\\Core\\Template\\TwigExtension::renderVar`,
   },
   {
+    label: 'url',
+    insertText: 'url(${1:name})',
+    detail: `function (Drupal)`,
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getUrl`,
+  },
+  {
+    label: 'path',
+    insertText: 'path(${1:name})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getPath`,
+  },
+  {
+    label: 'link',
+    insertText: 'link(${1:text})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getLink`,
+  },
+  {
     label: 'file_url',
     insertText: 'file_url(${1:path})',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getFileUrl`,
   },
-];
+  {
+    label: 'attach_library',
+    insertText: 'attach_library(${1:library})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::attachLibrary`,
+  },
+  {
+    label: 'active_theme_path',
+    insertText: 'active_theme_path()',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getActiveThemePath`,
+  },
+  {
+    label: 'active_theme',
+    insertText: 'active_theme()',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::getActiveTheme`,
+  },
+  {
+    label: 'create_attribute',
+    insertText: 'create_attribute(${1:attributes})',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::createAttribute`,
+  },
+].map((item) => Object.assign(item, { detail: `function (Drupal)` }));
 
 export default class TwigCompletionProvider {
   name = 'twig';
@@ -105,13 +141,10 @@ export default class TwigCompletionProvider {
       try {
         await access(file, constants.R_OK);
 
-        const completion: CompletionItem = {
-          label: item.label,
+        const completion: CompletionItem = Object.assign(item, {
           kind: CompletionItemKind.Function,
-          detail: `Drupal twig function ${item.label}`,
-          insertText: item.insertText,
           insertTextFormat: InsertTextFormat.Snippet,
-        };
+        });
 
         const docblock = await this.getDocblock(file, fnName);
 
