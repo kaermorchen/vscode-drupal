@@ -7,19 +7,14 @@ import {
   InsertTextFormat,
   TextDocumentPositionParams,
   TextDocuments,
-  MarkupKind,
+  Range,
+  Position,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
-import {
-  Class as ASTClass,
-  Identifier,
-  Method,
-  Namespace,
-  Node,
-} from 'php-parser';
+import { Class as ASTClass, Identifier, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
 
@@ -29,7 +24,14 @@ function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
 }
 
-const twigFunctions = [
+interface TwigSnippet {
+  label: string;
+  insertText: string;
+  callback: string;
+  detail?: string;
+}
+
+const twigFunctions: TwigSnippet[] = [
   {
     label: 'render_var',
     insertText: 'render_var(${1:any})',
@@ -43,12 +45,12 @@ const twigFunctions = [
   },
   {
     label: 'path',
-    insertText: 'path(${1:name})',
+    insertText: "path('${1:name}')",
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getPath`,
   },
   {
     label: 'link',
-    insertText: 'link(${1:text})',
+    insertText: 'link(${1:text}, ${1:uri})',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getLink`,
   },
   {
@@ -58,7 +60,7 @@ const twigFunctions = [
   },
   {
     label: 'attach_library',
-    insertText: 'attach_library(${1:library})',
+    insertText: "attach_library('${1:library}')",
     callback: `\\Drupal\\Core\\Template\\TwigExtension::attachLibrary`,
   },
   {
@@ -76,13 +78,67 @@ const twigFunctions = [
     insertText: 'create_attribute(${1:attributes})',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::createAttribute`,
   },
+  {
+    label: 'dump',
+    insertText: 'dump(${1:any})',
+    callback: `\\Drupal\\Core\\Template\\DebugExtension::dump`,
+  },
 ].map((item) => Object.assign(item, { detail: `function (Drupal)` }));
+
+const twigFilters: TwigSnippet[] = [
+  {
+    label: 'placeholder',
+    insertText: 'placeholder',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::escapePlaceholder`,
+  },
+  {
+    label: 'drupal_escape',
+    insertText: 'drupal_escape',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::escapeFilter`,
+  },
+  {
+    label: 'safe_join',
+    insertText: 'safe_join',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::safeJoin`,
+  },
+  {
+    label: 'without',
+    insertText: 'without',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::withoutFilter`,
+  },
+  {
+    label: 'clean_class',
+    insertText: 'clean_class',
+    callback: `\\Drupal\\Component\\Utility\\Html::getClass`,
+  },
+  {
+    label: 'clean_id',
+    insertText: 'clean_id',
+    callback: `\\Drupal\\Component\\Utility\\Html::getId`,
+  },
+  {
+    label: 'render',
+    insertText: 'render',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::renderVar`,
+  },
+  {
+    label: 'format_date',
+    insertText: 'format_date',
+    callback: `\\Drupal\\Core\\Datetime\\DateFormatterInterface::format`,
+  },
+  {
+    label: 'add_suggestion',
+    insertText: 'add_suggestion',
+    callback: `\\Drupal\\Core\\Template\\TwigExtension::suggestThemeHook`,
+  },
+].map((item) => Object.assign(item, { detail: `filter (Drupal)` }));
 
 export default class TwigCompletionProvider {
   name = 'twig';
   connection: Connection;
   documents: TextDocuments<TextDocument>;
-  apiCompletion: CompletionItem[] = [];
+  functionCompletion: CompletionItem[] = [];
+  filterCompletion: CompletionItem[] = [];
 
   constructor(connection: Connection) {
     this.connection = connection;
@@ -126,35 +182,52 @@ export default class TwigCompletionProvider {
   }
 
   async parseFiles() {
+    for (const item of twigFunctions) {
+      const completionItem = await this.createCompletionItem(item);
+
+      if (completionItem) {
+        this.functionCompletion.push(completionItem);
+      }
+    }
+
+    for (const item of twigFilters) {
+      const completionItem = await this.createCompletionItem(item);
+
+      if (completionItem) {
+        this.filterCompletion.push(completionItem);
+      }
+    }
+  }
+
+  async createCompletionItem(
+    item: TwigSnippet
+  ): Promise<CompletionItem | undefined> {
     const workspacePath = await this.getWorkspacePath();
-    const completions = [];
 
     if (!workspacePath) {
       return;
     }
 
-    for (const item of twigFunctions) {
-      const [namespace, fnName] = item.callback.split('::');
-      const parts = namespace.split('\\');
-      const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
+    const [namespace, fnName] = item.callback.split('::');
+    const parts = namespace.split('\\');
+    const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
 
-      try {
-        await access(file, constants.R_OK);
+    try {
+      await access(file, constants.R_OK);
 
-        const completion: CompletionItem = Object.assign(item, {
-          kind: CompletionItemKind.Function,
-          insertTextFormat: InsertTextFormat.Snippet,
-        });
+      const completionItem: CompletionItem = Object.assign(item, {
+        kind: CompletionItemKind.Function,
+        insertTextFormat: InsertTextFormat.Snippet,
+      });
 
-        const docblock = await this.getDocblock(file, fnName);
+      const docblock = await this.getDocblock(file, fnName);
 
-        if (docblock) {
-          completion.documentation = docblock;
-        }
+      if (docblock) {
+        completionItem.documentation = docblock;
+      }
 
-        this.apiCompletion.push(completion);
-      } catch {}
-    }
+      return completionItem;
+    } catch {}
   }
 
   async onCompletion(
@@ -167,7 +240,21 @@ export default class TwigCompletionProvider {
       return [];
     }
 
-    return this.apiCompletion;
+    const startLinePositon = Position.create(textDocumentPosition.position.line, 0);
+    const range = Range.create(startLinePositon, textDocumentPosition.position);
+    const text = document.getText(range);
+    const linePrefix = text.substring(
+      0,
+      textDocumentPosition.position.character
+    );
+
+    let apiCompletion = [...this.functionCompletion];
+
+    if (/\|\s*/.test(linePrefix)) {
+      apiCompletion = apiCompletion.concat(this.filterCompletion);
+    }
+
+    return apiCompletion;
   }
 
   async getDocblock(
