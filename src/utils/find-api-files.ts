@@ -1,5 +1,6 @@
-import { readdir, access, constants } from 'fs/promises';
+import { readdir, access } from 'fs/promises';
 import { join } from 'path';
+import { constants } from 'fs';
 
 export default async function findApiFiles(dirName: string) {
   let matchedFiles: string[] = [];
