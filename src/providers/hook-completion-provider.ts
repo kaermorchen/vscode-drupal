@@ -15,10 +15,10 @@ import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
-import findFiles from '../utils/find-files';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import Provider from './provider';
+import findApiFiles from '../utils/find-api-files';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
@@ -77,24 +77,30 @@ export default class HookCompletionProvider extends Provider {
 
     // TODO: read all workspaces?
     const workspacePath = URI.parse(workspaceFolders[0].uri).path;
+    const apiFiles = [join(workspacePath, 'web/core/core.api.php')];
     const moduleDirs = [
-      'web/core',
+      'web/core/modules',
       'web/modules/contrib',
       'web/modules/custom',
     ];
 
-    for (const path of moduleDirs) {
-      const files = await findFiles(join(workspacePath, path), /.api.php$/);
+    for (const moduleDir of moduleDirs) {
+      const moduleDirPath = join(workspacePath, moduleDir);
+      const files = await findApiFiles(moduleDirPath);
 
-      for (const file of files) {
-        try {
-          await access(file, constants.R_OK);
-          const completions = await this.getFileCompletions(file);
+      apiFiles.push(...files);
+    }
 
-          if (completions.length) {
-            this.apiCompletion.push(...completions);
-          }
-        } catch {}
+    for (const file of apiFiles) {
+      try {
+        await access(file, constants.R_OK);
+        const completions = await this.getFileCompletions(file);
+
+        if (completions.length) {
+          this.apiCompletion.push(...completions);
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
   }
