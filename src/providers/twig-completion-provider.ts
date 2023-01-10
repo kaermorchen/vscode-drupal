@@ -2,7 +2,6 @@ import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  Connection,
   InitializeResult,
   InsertTextFormat,
   TextDocumentPositionParams,
@@ -141,8 +140,8 @@ export default class TwigCompletionProvider extends Provider {
   functionCompletion: CompletionItem[] = [];
   filterCompletion: CompletionItem[] = [];
 
-  constructor(connection: Connection) {
-    super(connection);
+  constructor() {
+    super();
 
     this.documents = new TextDocuments(TextDocument);
 

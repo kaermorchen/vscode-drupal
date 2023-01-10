@@ -2,7 +2,6 @@ import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  Connection,
   InitializeResult,
   InsertTextFormat,
   TextDocumentPositionParams,
@@ -35,8 +34,8 @@ export default class HookCompletionProvider extends Provider {
   apiCompletion: CompletionItem[] = [];
   apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(connection: Connection) {
-    super(connection);
+  constructor() {
+    super();
 
     this.documents = new TextDocuments(TextDocument);
 

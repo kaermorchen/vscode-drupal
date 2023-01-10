@@ -1,7 +1,6 @@
 import { spawn } from 'child_process';
 import { URI } from 'vscode-uri';
 import {
-  Connection,
   Diagnostic,
   DiagnosticSeverity,
   DidChangeConfigurationNotification,
@@ -43,8 +42,8 @@ export default class PHPCSDiagnosticProvider extends Provider {
   hasConfigurationCapability = false;
   hasWorkspaceFolderCapability = false;
 
-  constructor(connection: Connection) {
-    super(connection);
+  constructor() {
+    super();
 
     this.documents = new TextDocuments(TextDocument);
 
