@@ -1,8 +1,7 @@
-import { readFile, access, readdir } from 'fs/promises';
+import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  Connection,
   InitializeResult,
   InsertTextFormat,
   TextDocumentPositionParams,
@@ -11,53 +10,42 @@ import {
   MarkupKind,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
-import DocParser from 'doc-parser';
+import { Function as ASTFunction, Identifier } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
 import findFiles from '../utils/find-files';
+import docParser from '../utils/doc-parser';
+import phpParser from '../utils/php-parser';
+import Provider from './provider';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
 };
 
-const phpParser = new Engine({
-  parser: {
-    extractTokens: true,
-    extractDoc: true,
-  },
-  ast: {
-    withPositions: true,
-    withSource: true,
-  },
-  lexer: {
-    all_tokens: true,
-  },
-});
-
-const docParser = new DocParser();
-
 function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
 }
 
-export default class HookCompletionProvider {
+export default class HookCompletionProvider extends Provider {
   name = 'hook';
-  connection: Connection;
   documents: TextDocuments<TextDocument>;
   apiCompletion: CompletionItem[] = [];
   apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(connection: Connection) {
-    this.connection = connection;
-    this.connection.onInitialize(this.onInitialize.bind(this));
-    this.connection.onInitialized(this.onInitialized.bind(this));
-    this.connection.onCompletion(this.onCompletion.bind(this));
+  constructor() {
+    super();
 
     this.documents = new TextDocuments(TextDocument);
-    this.documents.listen(this.connection);
+
+    this.disposables.push(
+      this.connection.onInitialize(this.onInitialize.bind(this)),
+      this.connection.onInitialized(this.onInitialized.bind(this)),
+      this.connection.onCompletion(this.onCompletion.bind(this)),
+
+      this.documents.listen(this.connection)
+    );
   }
 
   onInitialize(): InitializeResult {

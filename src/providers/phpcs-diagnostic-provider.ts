@@ -1,11 +1,9 @@
 import { spawn } from 'child_process';
 import { URI } from 'vscode-uri';
 import {
-  Connection,
   Diagnostic,
   DiagnosticSeverity,
   DidChangeConfigurationNotification,
-  Disposable,
   InitializeParams,
   InitializeResult,
   TextDocumentChangeEvent,
@@ -14,6 +12,7 @@ import {
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { join } from 'path';
+import Provider from './provider';
 
 const LINTER_MESSAGE_TYPE = <const>{
   ERROR: DiagnosticSeverity.Error,
@@ -37,25 +36,27 @@ interface Config {
   arguments: string;
 }
 
-export default class PHPCSDiagnosticProvider {
+export default class PHPCSDiagnosticProvider extends Provider {
   name = 'phpcs';
-  connection: Connection;
-  documents!: TextDocuments<TextDocument>;
+  documents: TextDocuments<TextDocument>;
   hasConfigurationCapability = false;
   hasWorkspaceFolderCapability = false;
-  listeners: Disposable[] = [];
 
-  constructor(connection: Connection) {
-    this.connection = connection;
-    this.connection.onInitialize(this.onInitialize.bind(this));
-    this.connection.onInitialized(this.onInitialized.bind(this));
-    this.connection.onDidChangeConfiguration(
-      this.onDidChangeConfiguration.bind(this)
-    );
+  constructor() {
+    super();
 
     this.documents = new TextDocuments(TextDocument);
-    this.documents.listen(this.connection);
-    this.documents.onDidChangeContent(this.onDidChangeContent.bind(this));
+
+    this.disposables.push(
+      this.connection.onInitialize(this.onInitialize.bind(this)),
+      this.connection.onInitialized(this.onInitialized.bind(this)),
+      this.connection.onDidChangeConfiguration(
+        this.onDidChangeConfiguration.bind(this)
+      ),
+
+      this.documents.listen(this.connection),
+      this.documents.onDidChangeContent(this.onDidChangeContent.bind(this))
+    );
   }
 
   onInitialize(params: InitializeParams) {
@@ -83,7 +84,9 @@ export default class PHPCSDiagnosticProvider {
 
   async onInitialized() {
     if (this.hasConfigurationCapability) {
-      this.connection.client.register(DidChangeConfigurationNotification.type);
+      this.connection.client.register(DidChangeConfigurationNotification.type).then(disposable => {
+        this.disposables.push(disposable);
+      });
     }
   }
 

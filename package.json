@@ -8,7 +8,9 @@
   "engines": {
     "vscode": "^1.74.0"
   },
-  "categories": [],
+  "categories": [
+    "Snippets"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
