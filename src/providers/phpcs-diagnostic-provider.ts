@@ -182,9 +182,7 @@ export default class PHPCSDiagnosticProvider extends Provider {
         });
       }
 
-      if (diagnostics.length) {
-        this.connection.sendDiagnostics({ uri, diagnostics });
-      }
+      this.connection.sendDiagnostics({ uri, diagnostics });
     });
 
     phpcs.stderr.on('data', (data) => {
