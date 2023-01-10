@@ -11,7 +11,7 @@ import {
   MarkupKind,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Engine, Function as ASTFunction, Identifier } from 'php-parser';
+import { Function as ASTFunction, Identifier } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import { URI } from 'vscode-uri';
 import { join } from 'path';

@@ -17,6 +17,7 @@ import { constants } from 'fs';
 import { Class as ASTClass, Identifier, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
+import Disposable from './disposable';
 
 const astFileCache = new Map<string, ASTClass>();
 
@@ -133,7 +134,7 @@ const twigFilters: TwigSnippet[] = [
   },
 ].map((item) => Object.assign(item, { detail: `filter (Drupal)` }));
 
-export default class TwigCompletionProvider {
+export default class TwigCompletionProvider extends Disposable {
   name = 'twig';
   connection: Connection;
   documents: TextDocuments<TextDocument>;
@@ -141,13 +142,19 @@ export default class TwigCompletionProvider {
   filterCompletion: CompletionItem[] = [];
 
   constructor(connection: Connection) {
-    this.connection = connection;
-    this.connection.onInitialize(this.onInitialize.bind(this));
-    this.connection.onInitialized(this.onInitialized.bind(this));
-    this.connection.onCompletion(this.onCompletion.bind(this));
+    super();
 
+    this.connection = connection;
     this.documents = new TextDocuments(TextDocument);
-    this.documents.listen(this.connection);
+
+    this.disposables.push(
+      this.connection.onInitialize(this.onInitialize.bind(this)),
+      this.connection.onInitialized(this.onInitialized.bind(this)),
+      this.connection.onCompletion(this.onCompletion.bind(this)),
+      this.connection.onShutdown(this.onShutdown.bind(this)),
+
+      this.documents.listen(this.connection)
+    );
   }
 
   onInitialize(): InitializeResult {
@@ -167,6 +174,10 @@ export default class TwigCompletionProvider {
 
   onInitialized() {
     this.parseFiles();
+  }
+
+  onShutdown() {
+    this.dispose();
   }
 
   async getWorkspacePath(): Promise<string | null> {
@@ -240,7 +251,10 @@ export default class TwigCompletionProvider {
       return [];
     }
 
-    const startLinePositon = Position.create(textDocumentPosition.position.line, 0);
+    const startLinePositon = Position.create(
+      textDocumentPosition.position.line,
+      0
+    );
     const range = Range.create(startLinePositon, textDocumentPosition.position);
     const text = document.getText(range);
     const linePrefix = text.substring(
@@ -253,9 +267,11 @@ export default class TwigCompletionProvider {
     if (/{{\s*/.test(linePrefix)) {
       apiCompletion = [...this.functionCompletion];
     } else {
-      apiCompletion = this.functionCompletion.map(item => Object.assign({}, item, {
-        insertText: `{{ ${item.insertText} }}`
-      }));
+      apiCompletion = this.functionCompletion.map((item) =>
+        Object.assign({}, item, {
+          insertText: `{{ ${item.insertText} }}`,
+        })
+      );
     }
 
     if (/\|\s*/.test(linePrefix)) {
