@@ -17,7 +17,7 @@ import { constants } from 'fs';
 import { Class as ASTClass, Identifier, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
-import Disposable from './disposable';
+import Provider from './provider';
 
 const astFileCache = new Map<string, ASTClass>();
 
@@ -134,24 +134,22 @@ const twigFilters: TwigSnippet[] = [
   },
 ].map((item) => Object.assign(item, { detail: `filter (Drupal)` }));
 
-export default class TwigCompletionProvider extends Disposable {
+export default class TwigCompletionProvider extends Provider {
   name = 'twig';
-  connection: Connection;
+
   documents: TextDocuments<TextDocument>;
   functionCompletion: CompletionItem[] = [];
   filterCompletion: CompletionItem[] = [];
 
   constructor(connection: Connection) {
-    super();
+    super(connection);
 
-    this.connection = connection;
     this.documents = new TextDocuments(TextDocument);
 
     this.disposables.push(
       this.connection.onInitialize(this.onInitialize.bind(this)),
       this.connection.onInitialized(this.onInitialized.bind(this)),
       this.connection.onCompletion(this.onCompletion.bind(this)),
-      this.connection.onShutdown(this.onShutdown.bind(this)),
 
       this.documents.listen(this.connection)
     );
@@ -174,10 +172,6 @@ export default class TwigCompletionProvider extends Disposable {
 
   onInitialized() {
     this.parseFiles();
-  }
-
-  onShutdown() {
-    this.dispose();
   }
 
   async getWorkspacePath(): Promise<string | null> {

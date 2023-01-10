@@ -19,6 +19,7 @@ import { constants } from 'fs';
 import findFiles from '../utils/find-files';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
+import Provider from './provider';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
@@ -28,21 +29,24 @@ function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
 }
 
-export default class HookCompletionProvider {
+export default class HookCompletionProvider extends Provider {
   name = 'hook';
-  connection: Connection;
   documents: TextDocuments<TextDocument>;
   apiCompletion: CompletionItem[] = [];
   apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
   constructor(connection: Connection) {
-    this.connection = connection;
-    this.connection.onInitialize(this.onInitialize.bind(this));
-    this.connection.onInitialized(this.onInitialized.bind(this));
-    this.connection.onCompletion(this.onCompletion.bind(this));
+    super(connection);
 
     this.documents = new TextDocuments(TextDocument);
-    this.documents.listen(this.connection);
+
+    this.disposables.push(
+      this.connection.onInitialize(this.onInitialize.bind(this)),
+      this.connection.onInitialized(this.onInitialized.bind(this)),
+      this.connection.onCompletion(this.onCompletion.bind(this)),
+
+      this.documents.listen(this.connection)
+    );
   }
 
   onInitialize(): InitializeResult {
