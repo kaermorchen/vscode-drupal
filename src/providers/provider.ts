@@ -1,23 +1,18 @@
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { Connection } from 'vscode-languageserver';
-import Disposable from './disposable';
+// import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+// import { Connection } from 'vscode-languageserver';
+// import Disposable from './disposable';
 
-export default class Provider extends Disposable {
-  readonly connection: Connection;
+import { ExtensionContext } from "vscode";
 
-  constructor() {
-    super();
+// export default class Provider extends Disposable {
+export default class Provider {
+  readonly context: ExtensionContext;
 
-    this.connection = createConnection(ProposedFeatures.all);;
-
-    this.disposables.push(
-      this.connection.onShutdown(this.onShutdown.bind(this))
-    );
-
-    this.connection.listen();
+  constructor(context: ExtensionContext) {
+    this.context = context;
   }
 
-  onShutdown() {
-    this.dispose();
-  }
+  // onShutdown() {
+  //   this.dispose();
+  // }
 }
