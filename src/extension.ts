@@ -1,5 +1,6 @@
 import { ExtensionContext, languages } from 'vscode';
 import HookCompletionProvider from './providers/hook-completion';
+import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import TwigCompletionProvider from './providers/twig-completion';
 
 export function activate(context: ExtensionContext) {
@@ -12,6 +13,7 @@ export function activate(context: ExtensionContext) {
       HookCompletionProvider.language,
       new HookCompletionProvider(context)
     ),
+    new PHPCSDiagnosticProvider(context)
   );
 }
 

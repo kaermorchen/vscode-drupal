@@ -1,18 +1,13 @@
-// import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-// import { Connection } from 'vscode-languageserver';
-// import Disposable from './disposable';
+import Disposable from './disposable';
 
 import { ExtensionContext } from "vscode";
 
-// export default class Provider extends Disposable {
-export default class Provider {
+export default class Provider extends Disposable {
   readonly context: ExtensionContext;
 
   constructor(context: ExtensionContext) {
+    super();
+
     this.context = context;
   }
-
-  // onShutdown() {
-  //   this.dispose();
-  // }
 }
