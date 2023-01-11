@@ -1,4 +1,5 @@
 import { ExtensionContext, languages } from 'vscode';
+import HookCompletionProvider from './providers/hook-completion';
 import TwigCompletionProvider from './providers/twig-completion';
 
 export function activate(context: ExtensionContext) {
@@ -6,7 +7,11 @@ export function activate(context: ExtensionContext) {
     languages.registerCompletionItemProvider(
       TwigCompletionProvider.language,
       new TwigCompletionProvider(context)
-    )
+    ),
+    languages.registerCompletionItemProvider(
+      HookCompletionProvider.language,
+      new HookCompletionProvider(context)
+    ),
   );
 }
 
