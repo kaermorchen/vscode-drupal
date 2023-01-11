@@ -1,3 +1,5 @@
+import { CompletionItem } from "vscode";
+
 declare module 'doc-parser' {
   interface Doc {
     kind: 'doc';
@@ -18,9 +20,6 @@ declare module 'doc-parser' {
   }
 }
 
-interface TwigSnippet {
-  label: string;
-  insertText: string;
+interface CompletionItemWithCallback extends CompletionItem {
   callback: string;
-  detail?: string;
 }

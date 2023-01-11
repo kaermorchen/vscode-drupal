@@ -1,12 +1,11 @@
 import { readFile, access } from 'fs/promises';
 import {
-  CompletionItem,
   CompletionItemKind,
   TextDocument,
   Position,
-  ExtensionContext,
   workspace,
   SnippetString,
+  CancellationToken,
 } from 'vscode';
 import { join } from 'path';
 import { constants } from 'fs';
@@ -15,10 +14,11 @@ import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
 import Provider from './provider';
 import getName from '../utils/get-name';
+import { CompletionItemWithCallback } from '../types/global';
 
 const astFileCache = new Map<string, ASTClass>();
 
-const twigFunctions: TwigSnippet[] = [
+const twigFunctions: CompletionItemWithCallback[] = [
   {
     label: 'render_var',
     insertText: '{{ render_var(${1:any}) }}',
@@ -73,11 +73,12 @@ const twigFunctions: TwigSnippet[] = [
 ].map((item) =>
   Object.assign(item, {
     detail: `function (Drupal)`,
+    kind: CompletionItemKind.Function,
     insertText: new SnippetString(item.insertText),
   })
 );
 
-const twigFilters: TwigSnippet[] = [
+const twigFilters: CompletionItemWithCallback[] = [
   {
     label: 'placeholder',
     insertText: 'placeholder',
@@ -126,6 +127,7 @@ const twigFilters: TwigSnippet[] = [
 ].map((item) =>
   Object.assign(item, {
     detail: `filter (Drupal)`,
+    kind: CompletionItemKind.Function,
     insertText: new SnippetString(item.insertText),
   })
 );
@@ -133,16 +135,7 @@ const twigFilters: TwigSnippet[] = [
 export default class TwigCompletionProvider extends Provider {
   static language = 'twig';
 
-  functionCompletion: CompletionItem[] = [];
-  filterCompletion: CompletionItem[] = [];
-
-  constructor(context: ExtensionContext) {
-    super(context);
-
-    this.parseFiles();
-  }
-
-  async provideCompletionItems(document: TextDocument, position: Position) {
+  provideCompletionItems(document: TextDocument, position: Position) {
     if (
       typeof document === 'undefined' ||
       document.languageId !== TwigCompletionProvider.language
@@ -150,17 +143,43 @@ export default class TwigCompletionProvider extends Provider {
       return [];
     }
 
-    let apiCompletion = [...this.functionCompletion];
+    let apiCompletion = [...twigFunctions];
     const linePrefix = document
       .lineAt(position)
       .text.substring(0, position.character);
 
     if (/\|\s*/.test(linePrefix)) {
-      apiCompletion = apiCompletion.concat(this.filterCompletion);
+      apiCompletion = apiCompletion.concat(twigFilters);
     }
 
     return apiCompletion;
   }
+
+  resolveCompletionItem = async (
+    item: CompletionItemWithCallback
+  ): Promise<CompletionItemWithCallback> => {
+    const workspacePath = await this.getWorkspacePath();
+
+    if (!workspacePath) {
+      return item;
+    }
+
+    const [namespace, fnName] = item.callback.split('::');
+    const parts = namespace.split('\\');
+    const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
+
+    try {
+      await access(file, constants.R_OK);
+
+      const docblock = await this.getDocblock(file, fnName);
+
+      if (docblock) {
+        item.documentation = docblock;
+      }
+    } catch {}
+
+    return item;
+  };
 
   async getWorkspacePath(): Promise<string | undefined> {
     const workspaceFolders = workspace.workspaceFolders;
@@ -171,54 +190,6 @@ export default class TwigCompletionProvider extends Provider {
 
     // TODO: which workspaces is current?
     return workspaceFolders[0].uri.path;
-  }
-
-  async parseFiles() {
-    for (const item of twigFunctions) {
-      const completionItem = await this.createCompletionItem(item);
-
-      if (completionItem) {
-        this.functionCompletion.push(completionItem);
-      }
-    }
-
-    for (const item of twigFilters) {
-      const completionItem = await this.createCompletionItem(item);
-
-      if (completionItem) {
-        this.filterCompletion.push(completionItem);
-      }
-    }
-  }
-
-  async createCompletionItem(
-    item: TwigSnippet
-  ): Promise<CompletionItem | undefined> {
-    const workspacePath = await this.getWorkspacePath();
-
-    if (!workspacePath) {
-      return;
-    }
-
-    const [namespace, fnName] = item.callback.split('::');
-    const parts = namespace.split('\\');
-    const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
-
-    try {
-      await access(file, constants.R_OK);
-
-      const completionItem: CompletionItem = Object.assign({}, item, {
-        kind: CompletionItemKind.Function,
-      });
-
-      const docblock = await this.getDocblock(file, fnName);
-
-      if (docblock) {
-        completionItem.documentation = docblock;
-      }
-
-      return completionItem;
-    } catch {}
   }
 
   async getDocblock(
