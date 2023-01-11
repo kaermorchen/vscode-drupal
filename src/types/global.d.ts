@@ -1,3 +1,5 @@
+import { CompletionItem } from "vscode";
+
 declare module 'doc-parser' {
   interface Doc {
     kind: 'doc';
@@ -16,4 +18,8 @@ declare module 'doc-parser' {
   export default class DocParser {
     parse(text: string): Doc;
   }
+}
+
+interface CompletionItemWithCallback extends CompletionItem {
+  callback: string;
 }

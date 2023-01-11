@@ -2,81 +2,56 @@ import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  InitializeResult,
-  InsertTextFormat,
-  TextDocumentPositionParams,
-  TextDocuments,
-  MarkupContent,
-  MarkupKind,
-} from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Function as ASTFunction, Identifier } from 'php-parser';
+  ExtensionContext,
+  MarkdownString,
+  SnippetString,
+  TextDocument,
+  workspace,
+} from 'vscode';
+import { Function as ASTFunction } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
-import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import Provider from './provider';
 import findApiFiles from '../utils/find-api-files';
+import getName from '../utils/get-name';
 
 const NODE_COMPLETION_ITEM = <const>{
   function: CompletionItemKind.Function,
 };
 
-function getName(val: string | Identifier) {
-  return typeof val === 'string' ? val : val.name;
-}
-
 export default class HookCompletionProvider extends Provider {
-  name = 'hook';
-  documents: TextDocuments<TextDocument>;
+  static language = 'php';
+
   apiCompletion: CompletionItem[] = [];
   apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor() {
-    super();
+  constructor(context: ExtensionContext) {
+    super(context);
 
-    this.documents = new TextDocuments(TextDocument);
-
-    this.disposables.push(
-      this.connection.onInitialize(this.onInitialize.bind(this)),
-      this.connection.onInitialized(this.onInitialized.bind(this)),
-      this.connection.onCompletion(this.onCompletion.bind(this)),
-
-      this.documents.listen(this.connection)
-    );
-  }
-
-  onInitialize(): InitializeResult {
-    return {
-      capabilities: {
-        completionProvider: {
-          resolveProvider: false,
-        },
-        workspace: {
-          workspaceFolders: {
-            supported: true,
-          },
-        },
-      },
-    };
-  }
-
-  onInitialized() {
     this.parseApiFiles();
   }
 
-  async parseApiFiles() {
-    const workspaceFolders =
-      await this.connection.workspace.getWorkspaceFolders();
+  async getWorkspacePath(): Promise<string | undefined> {
+    const workspaceFolders = workspace.workspaceFolders;
 
-    if (workspaceFolders === null) {
+    if (typeof workspaceFolders === 'undefined') {
       return;
     }
 
-    // TODO: read all workspaces?
-    const workspacePath = URI.parse(workspaceFolders[0].uri).path;
+    // TODO: which workspaces is current?
+    return workspaceFolders[0].uri.path;
+  }
+
+  async parseApiFiles() {
+    const workspacePath = await this.getWorkspacePath();
+
+    if (!workspacePath) {
+      return;
+    }
+
     const apiFiles = [join(workspacePath, 'web/core/core.api.php')];
     const moduleDirs = [
       'web/core/modules',
@@ -105,17 +80,15 @@ export default class HookCompletionProvider extends Provider {
     }
   }
 
-  async onCompletion(
-    textDocumentPosition: TextDocumentPositionParams
-  ): Promise<CompletionItem[]> {
-    const uri = textDocumentPosition.textDocument.uri.toString();
-    const document = this.documents.get(uri);
-
-    if (typeof document === 'undefined' || document.languageId !== 'php') {
+  async provideCompletionItems(document: TextDocument) {
+    if (
+      typeof document === 'undefined' ||
+      document.languageId !== HookCompletionProvider.language
+    ) {
       return [];
     }
 
-    const filePath = URI.parse(uri).path;
+    const filePath = document.uri.path;
     const cache = this.apiCompletionFileCache.get(filePath);
 
     if (cache) {
@@ -133,16 +106,18 @@ export default class HookCompletionProvider extends Provider {
       const searchValue = 'function hook_';
       const replaceValue = `function ${machineName}_`;
 
-      newItem.insertText = newItem.insertText?.replace(
-        searchValue,
-        replaceValue
-      );
-
-      if (typeof newItem.documentation === 'object') {
-        newItem.documentation.value = newItem.documentation.value.replace(
+      if (newItem.insertText instanceof SnippetString) {
+        newItem.insertText = new SnippetString(newItem.insertText.value.replace(
           searchValue,
           replaceValue
-        );
+        ));
+      }
+
+      if (newItem.documentation instanceof MarkdownString) {
+        newItem.documentation = new MarkdownString(newItem.documentation.value.replace(
+          searchValue,
+          replaceValue
+        ));
       }
 
       return newItem;
@@ -153,7 +128,7 @@ export default class HookCompletionProvider extends Provider {
     return apiCompletionWithMachineName;
   }
 
-  async getFileCompletions(filePath: string) {
+  async getFileCompletions(filePath: string): Promise<CompletionItem[]> {
     const completions: CompletionItem[] = [];
     const text = await readFile(filePath, 'utf8');
     const tree = phpParser.parseCode(text, filePath);
@@ -164,16 +139,18 @@ export default class HookCompletionProvider extends Provider {
           const func: ASTFunction = item as ASTFunction;
           const lastComment = item.leadingComments?.pop();
           const name = getName(func.name);
-          let documentation: MarkupContent | undefined;
 
           if (/^hook_/.test(name) === false) {
             break;
           }
 
-          const kind = NODE_COMPLETION_ITEM[item.kind];
           const funcCall = (item.loc?.source ?? name).replace(/\$/g, '\\$');
-          const insertText = `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`;
-          const detail = `Implements ${name}`;
+          const completion: CompletionItem = {
+            label: name,
+            kind: NODE_COMPLETION_ITEM[item.kind],
+            detail: `Implements ${name}`,
+            insertText: new SnippetString(`/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`),
+          };
 
           if (lastComment) {
             const args = func.arguments.map((item) =>
@@ -189,18 +166,11 @@ export default class HookCompletionProvider extends Provider {
               ast.summary,
             ].join('\n');
 
-            documentation = { kind: MarkupKind.Markdown, value };
+            completion.documentation = new MarkdownString(value);
           }
 
-          completions.push({
-            label: name,
-            kind,
-            detail,
-            documentation,
-            insertText,
-            insertTextFormat: InsertTextFormat.Snippet,
-            sortText: '-1',
-          });
+          completions.push(completion);
+
           break;
         }
       }

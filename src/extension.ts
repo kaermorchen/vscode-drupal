@@ -1,37 +1,20 @@
-import { join } from 'path';
-import { ExtensionContext } from 'vscode';
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind,
-} from 'vscode-languageclient/node';
-
-let client: LanguageClient;
+import { ExtensionContext, languages } from 'vscode';
+import HookCompletionProvider from './providers/hook-completion';
+import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
+import TwigCompletionProvider from './providers/twig-completion';
 
 export function activate(context: ExtensionContext) {
-  const serverModule = context.asAbsolutePath(join('out', 'server.js'));
-  const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-  const serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: debugOptions,
-    },
-  };
-
-  const clientOptions: LanguageClientOptions = {
-    documentSelector: [
-      { language: 'php', scheme: 'file' },
-      { language: 'twig', scheme: 'file' },
-    ],
-  };
-
-  client = new LanguageClient('drupal', 'Drupal', serverOptions, clientOptions);
-  client.start();
+  context.subscriptions.push(
+    languages.registerCompletionItemProvider(
+      TwigCompletionProvider.language,
+      new TwigCompletionProvider(context)
+    ),
+    languages.registerCompletionItemProvider(
+      HookCompletionProvider.language,
+      new HookCompletionProvider(context)
+    ),
+    new PHPCSDiagnosticProvider(context)
+  );
 }
 
-export function deactivate(): Thenable<void> | undefined {
-  return client?.stop();
-}
+export function deactivate() {}
