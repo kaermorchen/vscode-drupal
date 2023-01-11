@@ -17,3 +17,10 @@ declare module 'doc-parser' {
     parse(text: string): Doc;
   }
 }
+
+interface TwigSnippet {
+  label: string;
+  insertText: string;
+  callback: string;
+  detail?: string;
+}

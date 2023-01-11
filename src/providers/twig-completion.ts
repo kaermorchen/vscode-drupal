@@ -2,91 +2,80 @@ import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  // InitializeResult,
-  // InsertTextFormat,
-  // TextDocumentPositionParams,
   TextDocument,
-  Range,
   Position,
   ExtensionContext,
-  CompletionContext,
-  CancellationToken,
+  workspace,
+  SnippetString,
 } from 'vscode';
-// import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI } from 'vscode-uri';
 import { join } from 'path';
 import { constants } from 'fs';
-import { Class as ASTClass, Identifier, Method, Namespace } from 'php-parser';
+import { Class as ASTClass, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
 import Provider from './provider';
+import getName from '../utils/get-name';
 
 const astFileCache = new Map<string, ASTClass>();
-
-function getName(val: string | Identifier) {
-  return typeof val === 'string' ? val : val.name;
-}
-
-interface TwigSnippet {
-  label: string;
-  insertText: string;
-  callback: string;
-  detail?: string;
-}
 
 const twigFunctions: TwigSnippet[] = [
   {
     label: 'render_var',
-    insertText: 'render_var(${1:any})',
+    insertText: '{{ render_var(${1:any}) }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::renderVar`,
   },
   {
     label: 'url',
-    insertText: 'url(${1:name})',
+    insertText: '{{ url(${1:name}) }}',
     detail: `function (Drupal)`,
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getUrl`,
   },
   {
     label: 'path',
-    insertText: "path('${1:name}')",
+    insertText: "{{ path('${1:name}') }}",
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getPath`,
   },
   {
     label: 'link',
-    insertText: 'link(${1:text}, ${1:uri})',
+    insertText: '{{ link(${1:text}, ${1:uri}) }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getLink`,
   },
   {
     label: 'file_url',
-    insertText: 'file_url(${1:path})',
+    insertText: '{{ file_url(${1:path}) }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getFileUrl`,
   },
   {
     label: 'attach_library',
-    insertText: "attach_library('${1:library}')",
+    insertText: "{{ attach_library('${1:library}') }}",
     callback: `\\Drupal\\Core\\Template\\TwigExtension::attachLibrary`,
   },
   {
     label: 'active_theme_path',
-    insertText: 'active_theme_path()',
+    insertText: '{{ active_theme_path() }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getActiveThemePath`,
   },
   {
     label: 'active_theme',
-    insertText: 'active_theme()',
+    insertText: '{{ active_theme() }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getActiveTheme`,
   },
   {
     label: 'create_attribute',
-    insertText: 'create_attribute(${1:attributes})',
+    insertText: '{{ create_attribute(${1:attributes}) }}',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::createAttribute`,
   },
   {
     label: 'dump',
-    insertText: 'dump(${1:any})',
+    insertText: '{{ dump(${1:any}) }}',
     callback: `\\Drupal\\Core\\Template\\DebugExtension::dump`,
   },
-].map((item) => Object.assign(item, { detail: `function (Drupal)` }));
+].map((item) =>
+  Object.assign(item, {
+    detail: `function (Drupal)`,
+    insertText: new SnippetString(item.insertText),
+  })
+);
 
 const twigFilters: TwigSnippet[] = [
   {
@@ -134,198 +123,139 @@ const twigFilters: TwigSnippet[] = [
     insertText: 'add_suggestion',
     callback: `\\Drupal\\Core\\Template\\TwigExtension::suggestThemeHook`,
   },
-].map((item) => Object.assign(item, { detail: `filter (Drupal)` }));
+].map((item) =>
+  Object.assign(item, {
+    detail: `filter (Drupal)`,
+    insertText: new SnippetString(item.insertText),
+  })
+);
 
 export default class TwigCompletionProvider extends Provider {
   static language = 'twig';
 
-  // documents: TextDocuments<TextDocument>;
-  // functionCompletion: CompletionItem[] = [];
-  // filterCompletion: CompletionItem[] = [];
+  functionCompletion: CompletionItem[] = [];
+  filterCompletion: CompletionItem[] = [];
 
   constructor(context: ExtensionContext) {
     super(context);
 
-    // this.documents = new TextDocuments(TextDocument);
-
-    // this.disposables.push(
-    //   this.connection.onInitialize(this.onInitialize.bind(this)),
-    //   this.connection.onInitialized(this.onInitialized.bind(this)),
-    //   this.connection.onCompletion(this.onCompletion.bind(this)),
-
-    //   this.documents.listen(this.connection)
-    // );
+    this.parseFiles();
   }
 
-  provideCompletionItems(
-    document: TextDocument,
-    position: Position,
-    token: CancellationToken,
-    context: CompletionContext
-  ) {
-    // a simple completion item which inserts `Hello World!`
-    const simpleCompletion = new CompletionItem('Hello World!');
+  async provideCompletionItems(document: TextDocument, position: Position) {
+    if (
+      typeof document === 'undefined' ||
+      document.languageId !== TwigCompletionProvider.language
+    ) {
+      return [];
+    }
 
-    return [
-      simpleCompletion
-    ];
+    let apiCompletion = [...this.functionCompletion];
+    const linePrefix = document
+      .lineAt(position)
+      .text.substring(0, position.character);
+
+    if (/\|\s*/.test(linePrefix)) {
+      apiCompletion = apiCompletion.concat(this.filterCompletion);
+    }
+
+    return apiCompletion;
   }
 
-  // onInitialize(): InitializeResult {
-  //   return {
-  //     capabilities: {
-  //       completionProvider: {
-  //         resolveProvider: false,
-  //       },
-  //       workspace: {
-  //         workspaceFolders: {
-  //           supported: true,
-  //         },
-  //       },
-  //     },
-  //   };
-  // }
+  async getWorkspacePath(): Promise<string | undefined> {
+    const workspaceFolders = workspace.workspaceFolders;
 
-  // onInitialized() {
-  //   this.parseFiles();
-  // }
+    if (typeof workspaceFolders === 'undefined') {
+      return;
+    }
 
-  // async getWorkspacePath(): Promise<string | null> {
-  //   const workspaceFolders =
-  //     await this.connection.workspace.getWorkspaceFolders();
+    // TODO: which workspaces is current?
+    return workspaceFolders[0].uri.path;
+  }
 
-  //   if (workspaceFolders === null) {
-  //     return null;
-  //   }
+  async parseFiles() {
+    for (const item of twigFunctions) {
+      const completionItem = await this.createCompletionItem(item);
 
-  //   // TODO: which workspaces is current?
-  //   return URI.parse(workspaceFolders[0].uri).path;
-  // }
+      if (completionItem) {
+        this.functionCompletion.push(completionItem);
+      }
+    }
 
-  // async parseFiles() {
-  //   for (const item of twigFunctions) {
-  //     const completionItem = await this.createCompletionItem(item);
+    for (const item of twigFilters) {
+      const completionItem = await this.createCompletionItem(item);
 
-  //     if (completionItem) {
-  //       this.functionCompletion.push(completionItem);
-  //     }
-  //   }
+      if (completionItem) {
+        this.filterCompletion.push(completionItem);
+      }
+    }
+  }
 
-  //   for (const item of twigFilters) {
-  //     const completionItem = await this.createCompletionItem(item);
+  async createCompletionItem(
+    item: TwigSnippet
+  ): Promise<CompletionItem | undefined> {
+    const workspacePath = await this.getWorkspacePath();
 
-  //     if (completionItem) {
-  //       this.filterCompletion.push(completionItem);
-  //     }
-  //   }
-  // }
+    if (!workspacePath) {
+      return;
+    }
 
-  // async createCompletionItem(
-  //   item: TwigSnippet
-  // ): Promise<CompletionItem | undefined> {
-  //   const workspacePath = await this.getWorkspacePath();
+    const [namespace, fnName] = item.callback.split('::');
+    const parts = namespace.split('\\');
+    const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
 
-  //   if (!workspacePath) {
-  //     return;
-  //   }
+    try {
+      await access(file, constants.R_OK);
 
-  //   const [namespace, fnName] = item.callback.split('::');
-  //   const parts = namespace.split('\\');
-  //   const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
+      const completionItem: CompletionItem = Object.assign({}, item, {
+        kind: CompletionItemKind.Function,
+      });
 
-  //   try {
-  //     await access(file, constants.R_OK);
+      const docblock = await this.getDocblock(file, fnName);
 
-  //     const completionItem: CompletionItem = Object.assign({}, item, {
-  //       kind: CompletionItemKind.Function,
-  //       insertTextFormat: InsertTextFormat.Snippet,
-  //     });
+      if (docblock) {
+        completionItem.documentation = docblock;
+      }
 
-  //     const docblock = await this.getDocblock(file, fnName);
+      return completionItem;
+    } catch {}
+  }
 
-  //     if (docblock) {
-  //       completionItem.documentation = docblock;
-  //     }
+  async getDocblock(
+    filePath: string,
+    fnName: string
+  ): Promise<string | undefined> {
+    let astClass = astFileCache.get(filePath);
 
-  //     return completionItem;
-  //   } catch {}
-  // }
+    if (!astClass) {
+      const text = await readFile(filePath, 'utf8');
+      const tree = phpParser.parseCode(text, filePath);
 
-  // async onCompletion(
-  //   textDocumentPosition: TextDocumentPositionParams
-  // ): Promise<CompletionItem[]> {
-  //   const uri = textDocumentPosition.textDocument.uri.toString();
-  //   const document = this.documents.get(uri);
+      astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
+      astFileCache.set(filePath, astClass);
+    }
 
-  //   if (typeof document === 'undefined' || document.languageId !== 'twig') {
-  //     return [];
-  //   }
+    for (const item of astClass.body) {
+      switch (item.kind) {
+        case 'method': {
+          const func: Method = item as Method;
+          const name = getName(func.name);
 
-  //   const startLinePositon = Position.create(
-  //     textDocumentPosition.position.line,
-  //     0
-  //   );
-  //   const range = Range.create(startLinePositon, textDocumentPosition.position);
-  //   const text = document.getText(range);
-  //   const linePrefix = text.substring(
-  //     0,
-  //     textDocumentPosition.position.character
-  //   );
+          if (name !== fnName) {
+            break;
+          }
 
-  //   let apiCompletion;
+          const lastComment = item.leadingComments?.pop();
 
-  //   if (/{{\s*/.test(linePrefix)) {
-  //     apiCompletion = [...this.functionCompletion];
-  //   } else {
-  //     apiCompletion = this.functionCompletion.map((item) =>
-  //       Object.assign({}, item, {
-  //         insertText: `{{ ${item.insertText} }}`,
-  //       })
-  //     );
-  //   }
+          if (lastComment) {
+            const ast = docParser.parse(lastComment.value);
 
-  //   if (/\|\s*/.test(linePrefix)) {
-  //     apiCompletion = apiCompletion.concat(this.filterCompletion);
-  //   }
+            return ast.summary;
+          }
 
-  //   return apiCompletion;
-  // }
-
-  // async getDocblock(
-  //   filePath: string,
-  //   fnName: string
-  // ): Promise<string | undefined> {
-  //   let astClass = astFileCache.get(filePath);
-
-  //   if (!astClass) {
-  //     const text = await readFile(filePath, 'utf8');
-  //     const tree = phpParser.parseCode(text, filePath);
-
-  //     astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
-  //     astFileCache.set(filePath, astClass);
-  //   }
-
-  //   for (const item of astClass.body) {
-  //     switch (item.kind) {
-  //       case 'method': {
-  //         const func: Method = item as Method;
-  //         const name = getName(func.name);
-
-  //         if (name !== fnName) {
-  //           break;
-  //         }
-
-  //         const lastComment = item.leadingComments?.pop();
-
-  //         if (lastComment) {
-  //           const ast = docParser.parse(lastComment.value);
-
-  //           return ast.summary;
-  //         }
-
-  //         return;
-  //       }
-  //     }
-  //   }
-  // }
+          return;
+        }
+      }
+    }
+  }
 }
