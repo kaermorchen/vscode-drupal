@@ -6,7 +6,8 @@ This extension supports only Drupal projects which use composer template [drupal
 
 ## Features
 
-- syntax highlighting for Drupal's files `*.module`, `*.install`, etc
-- hook snippets
-
-Feel free to open feature request issue.
+- syntax highlighting for Drupal's files
+- hook completion
+- twig completion
+- code checker [Drupal coding standards](https://www.drupal.org/docs/develop/standards)
+- fixing coding standard violations
