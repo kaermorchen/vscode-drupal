@@ -36,7 +36,24 @@
       {
         "title": "Drupal",
         "properties": {
+          "drupal.phpcs.enabled": {
+            "order": 10,
+            "title": "phpcs",
+            "scope": "resource",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enables [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) checker"
+          },
+          "drupal.phpcbf.enabled": {
+            "order": 20,
+            "title": "phpcbf",
+            "scope": "resource",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enables [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer) code formatter"
+          },
           "drupal.trace.server": {
+            "order": 100,
             "scope": "window",
             "type": "string",
             "enum": [
@@ -46,18 +63,6 @@
             ],
             "default": "off",
             "description": "Traces the communication between VS Code and the language server. This setting is helpful for debugging."
-          }
-        }
-      },
-      {
-        "title": "PHP_CodeSniffer",
-        "properties": {
-          "drupal.diagnostics.phpcs.enabled": {
-            "order": 1,
-            "scope": "resource",
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "Enables [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)"
           }
         }
       }

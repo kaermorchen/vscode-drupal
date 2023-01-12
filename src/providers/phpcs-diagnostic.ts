@@ -32,7 +32,6 @@ interface LinterMessage {
 }
 
 export default class PHPCSDiagnosticProvider extends Provider {
-  name = 'phpcs';
   collection: DiagnosticCollection;
 
   constructor(context: ExtensionContext) {
@@ -55,31 +54,12 @@ export default class PHPCSDiagnosticProvider extends Provider {
     );
   }
 
-  get config() {
-    return workspace.getConfiguration(this.configName);
-  }
-
-  get source() {
-    return `Drupal: ${this.name}`;
-  }
-
-  get configName() {
-    return `drupal.diagnostics.${this.name}`;
-  }
-
-  async getWorkspacePath(): Promise<string | undefined> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    if (typeof workspaceFolders === 'undefined') {
-      return;
-    }
-
-    // TODO: which workspaces is current?
-    return workspaceFolders[0].uri.path;
+  get name() {
+    return 'phpcs';
   }
 
   async validate(document: TextDocument) {
-    const config = await this.config;
+    const config = this.config;
 
     if (!config.get('enabled')) {
       return;

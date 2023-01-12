@@ -1,7 +1,6 @@
 import { spawn } from 'child_process';
 import {
   TextDocument,
-  workspace,
   Range,
   FormattingOptions,
   CancellationToken,
@@ -12,7 +11,6 @@ import Provider from './provider';
 
 export default class PHPCBFDocumentFormattingProvider extends Provider {
   static language = 'php';
-  name = 'phpcbf';
 
   async provideDocumentFormattingEdits(
     document: TextDocument,
@@ -21,9 +19,9 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
   ): Promise<TextEdit[]> {
     const config = this.config;
 
-    // if (!config.get('enabled')) {
-    //   return [];
-    // }
+    if (!config.get('enabled')) {
+      return [];
+    }
 
     const workspacePath = await this.getWorkspacePath();
 
@@ -67,27 +65,14 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
       });
 
       phpcbf.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
+        const msg = `stderr: ${data}`;
+        console.error(msg);
+        reject(new Error(msg));
       });
     });
   }
 
-  get config() {
-    return workspace.getConfiguration(this.configName);
-  }
-
-  get configName() {
-    return `drupal.formatters.${this.name}`;
-  }
-
-  async getWorkspacePath(): Promise<string | undefined> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    if (typeof workspaceFolders === 'undefined') {
-      return;
-    }
-
-    // TODO: which workspaces is current?
-    return workspaceFolders[0].uri.path;
+  get name() {
+    return 'phpcbf';
   }
 }
