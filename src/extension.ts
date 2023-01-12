@@ -1,5 +1,6 @@
 import { ExtensionContext, languages } from 'vscode';
 import HookCompletionProvider from './providers/hook-completion';
+import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import TwigCompletionProvider from './providers/twig-completion';
 
@@ -12,6 +13,10 @@ export function activate(context: ExtensionContext) {
     languages.registerCompletionItemProvider(
       HookCompletionProvider.language,
       new HookCompletionProvider(context)
+    ),
+    languages.registerDocumentFormattingEditProvider(
+      PHPCBFDocumentFormattingProvider.language,
+      new PHPCBFDocumentFormattingProvider(context)
     ),
     new PHPCSDiagnosticProvider(context)
   );

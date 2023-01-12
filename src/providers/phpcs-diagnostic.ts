@@ -11,7 +11,7 @@ import {
   Range,
   Position,
 } from 'vscode';
-import { join } from 'path';
+import { extname, join } from 'path';
 import Provider from './provider';
 
 const LINTER_MESSAGE_TYPE = <const>{
@@ -32,7 +32,6 @@ interface LinterMessage {
 }
 
 export default class PHPCSDiagnosticProvider extends Provider {
-  name = 'phpcs';
   collection: DiagnosticCollection;
 
   constructor(context: ExtensionContext) {
@@ -55,39 +54,27 @@ export default class PHPCSDiagnosticProvider extends Provider {
     );
   }
 
-  get config() {
-    return workspace.getConfiguration(this.configName);
-  }
-
-  get source() {
-    return `Drupal: ${this.name}`;
-  }
-
-  get configName() {
-    return `drupal.diagnostics.${this.name}`;
-  }
-
-  async getWorkspacePath(): Promise<string | undefined> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    if (typeof workspaceFolders === 'undefined') {
-      return;
-    }
-
-    // TODO: which workspaces is current?
-    return workspaceFolders[0].uri.path;
+  get name() {
+    return 'phpcs';
   }
 
   async validate(document: TextDocument) {
-    const config = await this.config;
+    const config = this.config;
 
     if (!config.get('enabled')) {
       return;
     }
 
-    const workspacePath = await this.getWorkspacePath();
+    const executablePath = config.get('executablePath') as string;
 
-    if (!workspacePath) {
+    if (!executablePath) {
+      window.showErrorMessage('Setting `executablePath` not found');
+      return;
+    }
+
+    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+
+    if (!workspaceFolder) {
       return;
     }
 
@@ -97,13 +84,15 @@ export default class PHPCSDiagnosticProvider extends Provider {
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(workspacePath, 'vendor', 'bin', 'phpcs'),
+      join(workspaceFolder.uri.fsPath, executablePath),
+      ...config.get('args', []),
       '-q',
       '--report=json',
       `--stdin-path=${filePath}`,
-      '--standard=Drupal,DrupalPractice',
+      `--extensions=${extname(filePath).slice(1)}/php`,
       '-',
     ];
+
     // TODO: add abort signal
     const phpcs = spawn('php', args, spawnOptions);
 
