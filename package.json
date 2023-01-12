@@ -66,6 +66,22 @@
             "default": true,
             "markdownDescription": "Enables [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer) code formatter"
           },
+          "drupal.phpcbf.executablePath": {
+            "order": 21,
+            "scope": "resource",
+            "type": "string",
+            "default": "vendor/bin/phpcbf",
+            "markdownDescription": "Path to phpcbf"
+          },
+          "drupal.phpcbf.args": {
+            "order": 22,
+            "scope": "resource",
+            "type": "array",
+            "default": [
+              "--standard=Drupal,DrupalPractice"
+            ],
+            "markdownDescription": "[Argument list](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically) of phpcbf"
+          },
           "drupal.trace.server": {
             "order": 100,
             "scope": "window",

@@ -5,8 +5,10 @@ import {
   FormattingOptions,
   CancellationToken,
   TextEdit,
+  window,
+  workspace,
 } from 'vscode';
-import { join } from 'path';
+import { extname, join } from 'path';
 import Provider from './provider';
 
 export default class PHPCBFDocumentFormattingProvider extends Provider {
@@ -23,9 +25,16 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
       return [];
     }
 
-    const workspacePath = await this.getWorkspacePath();
+    const executablePath = config.get('executablePath') as string;
 
-    if (!workspacePath) {
+    if (!executablePath) {
+      window.showErrorMessage('Setting `executablePath` not found');
+      return [];
+    }
+
+    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+
+    if (!workspaceFolder) {
       return [];
     }
 
@@ -36,12 +45,14 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
         timeout: 1000 * 60 * 1, // 1 minute
       };
       const args = [
-        join(workspacePath, 'vendor', 'bin', 'phpcbf'),
+        join(workspaceFolder.uri.fsPath, executablePath),
+        ...config.get('args', []),
         '-q',
         `--stdin-path=${filePath}`,
-        '--standard=Drupal,DrupalPractice',
+        `--extensions=${extname(filePath).slice(1)}/php`,
         '-',
       ];
+
       // TODO: add abort signal
       const phpcbf = spawn('php', args, spawnOptions);
       const originalText = document.getText();

@@ -11,7 +11,7 @@ import {
   Range,
   Position,
 } from 'vscode';
-import { join } from 'path';
+import { extname, join } from 'path';
 import Provider from './provider';
 
 const LINTER_MESSAGE_TYPE = <const>{
@@ -89,6 +89,7 @@ export default class PHPCSDiagnosticProvider extends Provider {
       '-q',
       '--report=json',
       `--stdin-path=${filePath}`,
+      `--extensions=${extname(filePath).slice(1)}/php`,
       '-',
     ];
 
