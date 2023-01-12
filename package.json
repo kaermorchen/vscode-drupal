@@ -38,15 +38,29 @@
         "properties": {
           "drupal.phpcs.enabled": {
             "order": 10,
-            "title": "phpcs",
             "scope": "resource",
             "type": "boolean",
             "default": true,
             "markdownDescription": "Enables [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) checker"
           },
+          "drupal.phpcs.executablePath": {
+            "order": 11,
+            "scope": "resource",
+            "type": "string",
+            "default": "vendor/bin/phpcs",
+            "markdownDescription": "Path to phpcs"
+          },
+          "drupal.phpcs.args": {
+            "order": 12,
+            "scope": "resource",
+            "type": "array",
+            "default": [
+              "--standard=Drupal,DrupalPractice"
+            ],
+            "markdownDescription": "[Argument list](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage) of phpcs"
+          },
           "drupal.phpcbf.enabled": {
             "order": 20,
-            "title": "phpcbf",
             "scope": "resource",
             "type": "boolean",
             "default": true,

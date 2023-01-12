@@ -65,9 +65,16 @@ export default class PHPCSDiagnosticProvider extends Provider {
       return;
     }
 
-    const workspacePath = await this.getWorkspacePath();
+    const executablePath = config.get('executablePath') as string;
 
-    if (!workspacePath) {
+    if (!executablePath) {
+      window.showErrorMessage('Setting `executablePath` not found');
+      return;
+    }
+
+    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+
+    if (!workspaceFolder) {
       return;
     }
 
@@ -77,13 +84,14 @@ export default class PHPCSDiagnosticProvider extends Provider {
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(workspacePath, 'vendor', 'bin', 'phpcs'),
+      join(workspaceFolder.uri.fsPath, executablePath),
+      ...config.get('args', []),
       '-q',
       '--report=json',
       `--stdin-path=${filePath}`,
-      '--standard=Drupal,DrupalPractice',
       '-',
     ];
+
     // TODO: add abort signal
     const phpcs = spawn('php', args, spawnOptions);
 
