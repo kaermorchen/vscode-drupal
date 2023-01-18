@@ -2,6 +2,7 @@ import { ExtensionContext, languages } from 'vscode';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
+import PHPStan from './providers/phpstan';
 import TwigCompletionProvider from './providers/twig-completion';
 
 export function activate(context: ExtensionContext) {
@@ -18,7 +19,8 @@ export function activate(context: ExtensionContext) {
       PHPCBFDocumentFormattingProvider.language,
       new PHPCBFDocumentFormattingProvider(context)
     ),
-    new PHPCSDiagnosticProvider(context)
+    new PHPCSDiagnosticProvider(context),
+    new PHPStan(context)
   );
 }
 
