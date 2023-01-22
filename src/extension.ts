@@ -1,4 +1,5 @@
 import { ExtensionContext, languages } from 'vscode';
+import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
@@ -15,12 +16,16 @@ export function activate(context: ExtensionContext) {
       HookCompletionProvider.language,
       new HookCompletionProvider(context)
     ),
+    languages.registerCompletionItemProvider(
+      GlobalVariablesCompletionProvider.language,
+      new GlobalVariablesCompletionProvider(context)
+    ),
     languages.registerDocumentFormattingEditProvider(
       PHPCBFDocumentFormattingProvider.language,
       new PHPCBFDocumentFormattingProvider(context)
     ),
     new PHPCSDiagnosticProvider(context),
-    new PHPStan(context)
+    new PHPStan(context),
   );
 }
 
