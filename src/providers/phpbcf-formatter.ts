@@ -54,13 +54,13 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
       ];
 
       // TODO: add abort signal
-      const phpcbf = spawn('php', args, spawnOptions);
+      const process = spawn('php', args, spawnOptions);
       const originalText = document.getText();
 
-      phpcbf.stdin.write(originalText);
-      phpcbf.stdin.end();
+      process.stdin.write(originalText);
+      process.stdin.end();
 
-      phpcbf.stdout.on('data', (data) => {
+      process.stdout.on('data', (data) => {
         const formattedText = data.toString();
 
         if (originalText === formattedText) {
@@ -75,7 +75,7 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
         }
       });
 
-      phpcbf.stderr.on('data', (data) => {
+      process.stderr.on('data', (data) => {
         const msg = `stderr: ${data}`;
         console.error(msg);
         reject(new Error(msg));

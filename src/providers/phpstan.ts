@@ -84,9 +84,9 @@ export default class PHPStan extends Provider {
     ];
 
     // TODO: add abort signal
-    const phpcs = spawn('php', args, spawnOptions);
+    const process = spawn('php', args, spawnOptions);
 
-    phpcs.stdout.on('data', (data) => {
+    process.stdout.on('data', (data) => {
       const json = JSON.parse(data.toString());
       const diagnostics: Diagnostic[] = [];
 
@@ -109,7 +109,7 @@ export default class PHPStan extends Provider {
       this.collection.set(document.uri, diagnostics);
     });
 
-    phpcs.stderr.on('data', (data) => {
+    process.stderr.on('data', (data) => {
       console.error(`stderr: ${data}`);
     });
   }

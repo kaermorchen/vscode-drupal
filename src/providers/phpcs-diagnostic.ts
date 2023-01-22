@@ -94,12 +94,12 @@ export default class PHPCSDiagnosticProvider extends Provider {
     ];
 
     // TODO: add abort signal
-    const phpcs = spawn('php', args, spawnOptions);
+    const process = spawn('php', args, spawnOptions);
 
-    phpcs.stdin.write(document.getText());
-    phpcs.stdin.end();
+    process.stdin.write(document.getText());
+    process.stdin.end();
 
-    phpcs.stdout.on('data', (data) => {
+    process.stdout.on('data', (data) => {
       const json = JSON.parse(data.toString());
       const diagnostics: Diagnostic[] = [];
 
@@ -123,7 +123,7 @@ export default class PHPCSDiagnosticProvider extends Provider {
       this.collection.set(document.uri, diagnostics);
     });
 
-    phpcs.stderr.on('data', (data) => {
+    process.stderr.on('data', (data) => {
       console.error(`stderr: ${data}`);
     });
   }
