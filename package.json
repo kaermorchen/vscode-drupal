@@ -82,6 +82,28 @@
             ],
             "markdownDescription": "[Argument list](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically) of phpcbf"
           },
+          "drupal.phpstan.enabled": {
+            "order": 30,
+            "scope": "resource",
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Enables [phpstan](https://phpstan.org/) analyse"
+          },
+          "drupal.phpstan.executablePath": {
+            "order": 31,
+            "scope": "resource",
+            "type": "string",
+            "default": "vendor/bin/phpstan",
+            "markdownDescription": "Path to phpstan"
+          },
+          "drupal.phpstan.args": {
+            "order": 32,
+            "scope": "resource",
+            "type": "array",
+            "default": [
+            ],
+            "markdownDescription": "[Argument list](https://phpstan.org/user-guide/command-line-usage) of phpstan"
+          },
           "drupal.trace.server": {
             "order": 100,
             "scope": "window",
