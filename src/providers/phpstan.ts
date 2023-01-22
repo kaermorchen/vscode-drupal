@@ -70,6 +70,7 @@ export default class PHPStan extends Provider {
 
     const filePath = document.uri.path;
     const spawnOptions = {
+      cwd: workspaceFolder.uri.fsPath,
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
     };
