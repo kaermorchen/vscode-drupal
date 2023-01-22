@@ -85,9 +85,6 @@ export default class PHPStan extends Provider {
     // TODO: add abort signal
     const phpcs = spawn('php', args, spawnOptions);
 
-    phpcs.stdin.write(document.getText());
-    phpcs.stdin.end();
-
     phpcs.stdout.on('data', (data) => {
       const json = JSON.parse(data.toString());
       const diagnostics: Diagnostic[] = [];
