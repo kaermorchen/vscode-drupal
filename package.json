@@ -32,6 +32,11 @@
         ]
       }
     ],
+    "configurationDefaults": {
+      "search.exclude": {
+        "/composer.lock": true
+      }
+    },
     "configuration": [
       {
         "title": "Drupal",
@@ -100,8 +105,7 @@
             "order": 32,
             "scope": "resource",
             "type": "array",
-            "default": [
-            ],
+            "default": [],
             "markdownDescription": "[Argument list](https://phpstan.org/user-guide/command-line-usage) of phpstan"
           },
           "drupal.trace.server": {
