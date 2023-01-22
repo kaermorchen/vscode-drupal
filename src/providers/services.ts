@@ -79,9 +79,9 @@ export default class ServicesCompletionProvider extends Provider {
 
     const linePrefix = document
       .lineAt(position)
-      .text.substring(0, position.character - 1);
+      .text.substring(0, position.character);
 
-    if (!linePrefix.endsWith('::service(') && !linePrefix.endsWith('$container->get(')) {
+    if (!linePrefix.includes('Drupal::service(') && !linePrefix.includes('$container->get(')) {
       return [];
     }
 
@@ -103,7 +103,7 @@ export default class ServicesCompletionProvider extends Provider {
         const completion: CompletionItem = {
           label: `${moduleName}.${name}`,
           kind: CompletionItemKind.Class,
-          detail: `Services`,
+          detail: `Service`,
         };
 
         completions.push(completion);
