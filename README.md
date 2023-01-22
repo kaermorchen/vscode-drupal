@@ -9,5 +9,6 @@ This extension supports only Drupal projects which use composer template [drupal
 - syntax highlighting for Drupal's files
 - hook completion
 - twig completion
+- global variables completion
 - code checker [Drupal coding standards](https://www.drupal.org/docs/develop/standards)
 - fixing coding standard violations
