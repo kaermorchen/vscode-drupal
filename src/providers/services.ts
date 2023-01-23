@@ -13,6 +13,12 @@ import { constants } from 'fs';
 import Provider from './provider';
 import { parse } from 'yaml';
 
+const prefixes = [
+  'Drupal::service(',
+  '$container->get(',
+  '$container->getDefinition(',
+];
+
 export default class ServicesCompletionProvider extends Provider {
   static language = 'php';
 
@@ -81,7 +87,7 @@ export default class ServicesCompletionProvider extends Provider {
       .lineAt(position)
       .text.substring(0, position.character);
 
-    if (!linePrefix.includes('Drupal::service(') && !linePrefix.includes('$container->get(')) {
+    if (!prefixes.some(item => linePrefix.includes(item))) {
       return [];
     }
 
