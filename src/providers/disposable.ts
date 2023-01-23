@@ -1,4 +1,4 @@
-import { Disposable as IDisposable } from 'vscode-languageserver';
+import { Disposable as IDisposable } from 'vscode';
 
 export default class Disposable implements IDisposable {
   protected readonly disposables: IDisposable[] = [];
