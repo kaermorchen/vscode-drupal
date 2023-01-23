@@ -6,6 +6,7 @@ import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import PHPStan from './providers/phpstan';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
+import DrupalStatusBarItem from './status-bar';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
@@ -32,6 +33,7 @@ export function activate(context: ExtensionContext) {
     ),
     new PHPCSDiagnosticProvider(context),
     new PHPStan(context),
+    new DrupalStatusBarItem(context),
   );
 }
 

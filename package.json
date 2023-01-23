@@ -16,6 +16,15 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "icons": {
+      "drupal-logo": {
+        "description": "Drupal logo",
+        "default": {
+          "fontPath": "./assets/icons.woff",
+          "fontCharacter": "\\E900"
+        }
+      }
+    },
     "languages": [
       {
         "id": "php",
