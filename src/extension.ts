@@ -34,7 +34,7 @@ export function activate(context: ExtensionContext) {
     ),
     new PHPCSDiagnosticProvider(context),
     new PHPStan(context),
-    new DrupalStatusBarItem(context),
+    new DrupalStatusBarItem(),
 
     // Commands
     new ShowOutputChannel(),
