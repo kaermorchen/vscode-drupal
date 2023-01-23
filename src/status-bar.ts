@@ -9,7 +9,7 @@ export default class DrupalStatusBarItem extends Disposable {
     super();
 
     this.context = context;
-    this.statusBarItem = window.createStatusBarItem('drupal', StatusBarAlignment.Right, 1000);
+    this.statusBarItem = window.createStatusBarItem('drupal', StatusBarAlignment.Right, 100);
     this.statusBarItem.name = 'Drupal';
 
     this.disposables.push(this.statusBarItem);
