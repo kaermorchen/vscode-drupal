@@ -1,4 +1,5 @@
 import { ExtensionContext, StatusBarAlignment, StatusBarItem, window } from "vscode";
+import ShowOutputChannel from "./commands/show-output-channel";
 import Disposable from "./providers/disposable";
 
 export default class DrupalStatusBarItem extends Disposable {
@@ -11,6 +12,7 @@ export default class DrupalStatusBarItem extends Disposable {
     this.context = context;
     this.statusBarItem = window.createStatusBarItem('drupal', StatusBarAlignment.Right, 100);
     this.statusBarItem.name = 'Drupal';
+    this.statusBarItem.command = ShowOutputChannel.id;
 
     this.disposables.push(this.statusBarItem);
 

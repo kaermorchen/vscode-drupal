@@ -1,4 +1,5 @@
 import { ExtensionContext, languages } from 'vscode';
+import ShowOutputChannel from './commands/show-output-channel';
 import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
@@ -34,6 +35,9 @@ export function activate(context: ExtensionContext) {
     new PHPCSDiagnosticProvider(context),
     new PHPStan(context),
     new DrupalStatusBarItem(context),
+
+    // Commands
+    new ShowOutputChannel(),
   );
 }
 
