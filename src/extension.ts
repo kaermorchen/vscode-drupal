@@ -4,6 +4,7 @@ import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import PHPStan from './providers/phpstan';
+import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
 
 export function activate(context: ExtensionContext) {
@@ -19,6 +20,11 @@ export function activate(context: ExtensionContext) {
     languages.registerCompletionItemProvider(
       GlobalVariablesCompletionProvider.language,
       new GlobalVariablesCompletionProvider(context)
+    ),
+    languages.registerCompletionItemProvider(
+      ServicesCompletionProvider.language,
+      new ServicesCompletionProvider(context),
+      '"', "'"
     ),
     languages.registerDocumentFormattingEditProvider(
       PHPCBFDocumentFormattingProvider.language,
