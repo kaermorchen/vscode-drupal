@@ -1,4 +1,5 @@
 import { ExtensionContext, languages } from 'vscode';
+import ShowOutputChannel from './commands/show-output-channel';
 import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
@@ -6,6 +7,7 @@ import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import PHPStan from './providers/phpstan';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
+import DrupalStatusBarItem from './status-bar';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
@@ -32,6 +34,10 @@ export function activate(context: ExtensionContext) {
     ),
     new PHPCSDiagnosticProvider(context),
     new PHPStan(context),
+    new DrupalStatusBarItem(),
+
+    // Commands
+    new ShowOutputChannel(),
   );
 }
 
