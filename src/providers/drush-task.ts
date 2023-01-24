@@ -62,57 +62,26 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
 
             const kind: TaskDefinition = {
               type: 'drush',
-              task: item.name,
-              detail: item.description,
-              arguments: item.definition.arguments,
-              options: item.definition.options,
             };
 
-            const task = await this.getTask(kind);
+            const execution = new ShellExecution(`${drush} ${item.name}`);
+
+            const task = new Task(
+              kind,
+              workspaceFolder,
+              item.name,
+              'Drush',
+              execution
+            );
 
             result.push(task);
           }
         }
-      } catch (err: any) {
-        if (err.stderr) {
-          outputChannel.appendLine(err.stderr);
-        }
-
-        if (err.stdout) {
-          outputChannel.appendLine(err.stdout);
-        }
-
-        outputChannel.appendLine('Drush get tasks failed.');
-        outputChannel.show(true);
+      } catch {
+        // TODO: add error handler
       }
     }
 
-    this.tasks = result;
-
-    return this.tasks;
-  }
-
-  async resolveTask(task: Task): Promise<Task | undefined> {
-    if (!task) {
-      return undefined;
-    }
-
-    return await this.getTask(task.definition);
-  }
-
-  async getTask(item: TaskDefinition): Promise<Task> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    const task = new Task(
-      item,
-      workspaceFolders![0],
-      item.task,
-      'drush',
-    );
-
-    task.detail = item.detail;
-    task.execution = new ShellExecution(`php vendor/bin/drush ${item.task}`);
-
-    return task;
+    return result;
   }
 }
