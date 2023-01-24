@@ -28,6 +28,15 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
   private tasks: Task[] | undefined;
 
   async provideTasks(): Promise<Task[]> {
+    return this.getTasks();
+  }
+
+  resolveTask(_task: Task): Task | undefined {
+    // TODO: write resolveTask
+    return undefined;
+  }
+
+  async getTasks(): Promise<Task[]> {
     if (this.tasks !== undefined) {
       return this.tasks;
     }
@@ -74,6 +83,8 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
               execution
             );
 
+            task.detail = item.description;
+
             result.push(task);
           }
         }
@@ -81,6 +92,8 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
         // TODO: add error handler
       }
     }
+
+    this.tasks = result;
 
     return result;
   }
