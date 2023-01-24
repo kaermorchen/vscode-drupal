@@ -1,5 +1,6 @@
-import { ExtensionContext, languages } from 'vscode';
+import { ExtensionContext, languages, tasks } from 'vscode';
 import ShowOutputChannel from './commands/show-output-channel';
+import DrushTaskProvider from './providers/drush-task';
 import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
@@ -38,6 +39,10 @@ export function activate(context: ExtensionContext) {
       PHPCBFDocumentFormattingProvider.language,
       new PHPCBFDocumentFormattingProvider(context)
     ),
+    tasks.registerTaskProvider(
+      DrushTaskProvider.id,
+      new DrushTaskProvider(context)
+    ),
     new PHPCSDiagnosticProvider(context),
     new PHPStan(context),
     new DrupalStatusBarItem(),
@@ -47,4 +52,4 @@ export function activate(context: ExtensionContext) {
   );
 }
 
-export function deactivate() {}
+export function deactivate() { }
