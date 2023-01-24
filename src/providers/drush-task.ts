@@ -28,15 +28,6 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
   private tasks: Task[] | undefined;
 
   async provideTasks(): Promise<Task[]> {
-    return this.getTasks();
-  }
-
-  resolveTask(_task: Task): Task | undefined {
-    // TODO: write resolveTask
-    return undefined;
-  }
-
-  async getTasks(): Promise<Task[]> {
     if (this.tasks !== undefined) {
       return this.tasks;
     }
@@ -71,19 +62,13 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
 
             const kind: TaskDefinition = {
               type: 'drush',
+              task: item.name,
+              detail: item.description,
+              arguments: item.definition.arguments,
+              options: item.definition.options,
             };
 
-            const execution = new ShellExecution(`${drush} ${item.name}`);
-
-            const task = new Task(
-              kind,
-              workspaceFolder,
-              item.name,
-              'Drush',
-              execution
-            );
-
-            task.detail = item.description;
+            const task = await this.getTask(kind);
 
             result.push(task);
           }
@@ -95,6 +80,25 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
 
     this.tasks = result;
 
-    return result;
+    return this.tasks;
+  }
+
+  async resolveTask(task: Task): Promise<Task | undefined> {
+    if (!task) {
+      return undefined;
+    }
+
+    return await this.getTask(task.definition);
+  }
+
+  async getTask(item: TaskDefinition): Promise<Task> {
+    const workspaceFolders = workspace.workspaceFolders;
+
+    const task = new Task(item, workspaceFolders![0], item.task, 'drush');
+
+    task.detail = item.detail;
+    task.execution = new ShellExecution(`php vendor/bin/drush ${item.task}`);
+
+    return task;
   }
 }
