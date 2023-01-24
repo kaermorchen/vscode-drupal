@@ -5,6 +5,7 @@ import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
 import PHPStan from './providers/phpstan';
+import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
 import DrupalStatusBarItem from './status-bar';
@@ -26,6 +27,11 @@ export function activate(context: ExtensionContext) {
     languages.registerCompletionItemProvider(
       ServicesCompletionProvider.language,
       new ServicesCompletionProvider(context),
+      '"', "'"
+    ),
+    languages.registerCompletionItemProvider(
+      RoutingCompletionProvider.language,
+      new RoutingCompletionProvider(context),
       '"', "'"
     ),
     languages.registerDocumentFormattingEditProvider(
