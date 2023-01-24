@@ -31,42 +31,9 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
   }
 
   resolveTask(_task: Task): Task | undefined {
+    // TODO: write resolveTask
     return undefined;
   }
-
-  // getTasks(): Task[] {
-  //   if (this.tasks !== undefined) {
-  //     return this.tasks;
-  //   }
-
-  //   const result: Task[] = [];
-  //   const workspaceFolders = workspace.workspaceFolders;
-
-  //   if (!workspaceFolders || workspaceFolders.length === 0) {
-  //     return result;
-  //   }
-
-  //   const workspacePath = workspaceFolders[0].uri.fsPath;
-
-  //   const spawnOptions = {
-  //     cwd: workspacePath,
-  //     encoding: 'utf8',
-  //     timeout: 1000 * 60 * 1, // 1 minute
-  //   };
-  //   const args = [
-  //     join(workspacePath, 'vendor/bin/drush'),
-  //     'help',
-  //   ];
-
-  //   const execution = new ShellExecution('php', args, spawnOptions)
-
-  //   result.push(
-  //     new Task(taskDefinition, TaskScope.Workspace, `drush help`, DrushTaskProvider.id, execution),
-  //   );
-
-  //   return result;
-  // }
-  // }
 
   async getTasks(): Promise<Task[]> {
     if (this.tasks !== undefined) {
@@ -91,7 +58,7 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
 
       try {
         const drush = `php vendor/bin/drush`;
-        const stdout = await execSync(`${drush} list --format=json`, { cwd: workspacePath });
+        const stdout = execSync(`${drush} list --format=json`, { cwd: workspacePath });
 
         if (stdout) {
           const json = JSON.parse(stdout.toString());
@@ -115,6 +82,8 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
               execution
             );
 
+            task.detail = item.description;
+
             result.push(task);
           }
         }
@@ -131,6 +100,8 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
         outputChannel.show(true);
       }
     }
+
+    this.tasks = result;
 
     return result;
   }
