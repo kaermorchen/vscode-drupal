@@ -3,6 +3,7 @@ import {
   CompletionItemKind,
   CompletionItemProvider,
   languages,
+  TextDocument,
   workspace,
 } from 'vscode';
 import { basename } from 'path';
@@ -26,7 +27,13 @@ export default class RoutingCompletionProvider
     this.drupalWorkspace = drupalWorkspace;
     this.include = include;
 
-    this.drupalWorkspace.disposables.push(
+    this.drupalWorkspace.composerWatcher.onDidChange(
+      this.parseFiles,
+      this,
+      this.disposables
+    );
+
+    this.disposables.push(
       languages.registerCompletionItemProvider(
         RoutingCompletionProvider.language,
         this,
@@ -60,7 +67,10 @@ export default class RoutingCompletionProvider
     }
   }
 
-  provideCompletionItems() {
-    return this.completions;
+  provideCompletionItems(document: TextDocument) {
+    return this.drupalWorkspace.workspaceFolder ===
+      workspace.getWorkspaceFolder(document.uri)
+      ? this.completions
+      : [];
   }
 }

@@ -2,7 +2,6 @@ import {
   CompletionItem,
   CompletionItemKind,
   CompletionItemProvider,
-  FileSystemWatcher,
   languages,
   MarkdownString,
   TextDocument,
@@ -21,45 +20,44 @@ export default class GlobalVariablesCompletionProvider
 {
   static language = 'php';
 
-  apiCompletion: CompletionItem[] = [];
+  completion: CompletionItem[] = [];
   drupalWorkspace: DrupalWorkspace;
-  watcher: FileSystemWatcher;
 
   constructor(drupalWorkspace: DrupalWorkspace) {
     super();
 
     this.drupalWorkspace = drupalWorkspace;
-    this.watcher = workspace.createFileSystemWatcher(
-      this.drupalWorkspace.getRelativePattern('web/core/globals.api.php')
+
+    this.drupalWorkspace.composerWatcher.onDidChange(
+      this.parseFiles,
+      this,
+      this.disposables
     );
 
-    this.watcher.onDidChange(this.parseApiFiles, this, this.disposables);
-
-    this.drupalWorkspace.disposables.push(
+    this.disposables.push(
       languages.registerCompletionItemProvider(
         GlobalVariablesCompletionProvider.language,
         this
-      ),
-      this.watcher
+      )
     );
 
-    this.parseApiFiles();
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
+  async parseFiles() {
     const result = await this.drupalWorkspace.findFile(
       'web/core/globals.api.php'
     );
 
     if (result) {
-      this.apiCompletion = await this.getFileCompletions(result);
+      this.completion = await this.getFileCompletions(result);
     }
   }
 
   async provideCompletionItems(document: TextDocument) {
     return this.drupalWorkspace.workspaceFolder ===
       workspace.getWorkspaceFolder(document.uri)
-      ? this.apiCompletion
+      ? this.completion
       : [];
   }
 

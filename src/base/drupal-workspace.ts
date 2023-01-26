@@ -1,6 +1,7 @@
 import { dirname } from 'path';
 import {
   ExtensionContext,
+  FileSystemWatcher,
   RelativePattern,
   Uri,
   workspace,
@@ -18,6 +19,7 @@ type Tail<T extends any[]> = T extends [head: any, ...tail: infer Tail_]
 export default class DrupalWorkspace extends Context {
   coreModules: DrupalCoreModule[] = [];
   workspaceFolder: WorkspaceFolder;
+  composerWatcher: FileSystemWatcher;
   globalVariables: GlobalVariablesCompletionProvider;
   coreRoutingCompletionProvider: RoutingCompletionProvider;
   contribRoutingCompletionProvider: RoutingCompletionProvider;
@@ -26,6 +28,9 @@ export default class DrupalWorkspace extends Context {
     super(context);
 
     this.workspaceFolder = workspaceFolder;
+    this.composerWatcher = workspace.createFileSystemWatcher(
+      this.getRelativePattern('composer.json')
+    );
     this.globalVariables = new GlobalVariablesCompletionProvider(this);
     this.coreRoutingCompletionProvider = new RoutingCompletionProvider(
       this,
@@ -34,6 +39,13 @@ export default class DrupalWorkspace extends Context {
     this.contribRoutingCompletionProvider = new RoutingCompletionProvider(
       this,
       'web/modules/contrib/*/*.routing.yml'
+    );
+
+    this.disposables.push(
+      this.composerWatcher,
+      this.globalVariables,
+      this.coreRoutingCompletionProvider,
+      this.contribRoutingCompletionProvider
     );
 
     this.initDrupalModules();
