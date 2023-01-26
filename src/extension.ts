@@ -1,4 +1,9 @@
-import { ExtensionContext, languages } from 'vscode';
+import {
+  ExtensionContext,
+  languages,
+  RelativePattern,
+  workspace,
+} from 'vscode';
 import ShowOutputChannel from './commands/show-output-channel';
 import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
@@ -9,11 +14,36 @@ import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
 import DrupalStatusBar from './base/drupal-status-bar';
-import Main from './base/main';
+import DrupalWorkspace from './base/drupal-workspace';
+import getWorkspaceFolders from './utils/get-workspace-folders';
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
+  const drupalWorkspaces = [];
+
+  for (const workspaceFolder of getWorkspaceFolders()) {
+    const include = new RelativePattern(workspaceFolder, 'composer.json');
+    const composerUri = await workspace.findFiles(include, undefined, 1);
+
+    if (composerUri.length === 0) {
+      continue;
+    }
+
+    const composer = await workspace.fs
+      .readFile(composerUri[0])
+      .then((value) => value.toString())
+      .then((value) => JSON.parse(value));
+
+    if ('drupal/core-recommended' in composer.require) {
+      drupalWorkspaces.push(new DrupalWorkspace(context, workspaceFolder));
+    }
+  }
+
+  if (drupalWorkspaces.length === 0) {
+    return;
+  }
+
   context.subscriptions.push(
-    new Main(context),
+    ...drupalWorkspaces,
     // languages.registerCompletionItemProvider(
     //   TwigCompletionProvider.language,
     //   new TwigCompletionProvider(context)
@@ -42,10 +72,10 @@ export function activate(context: ExtensionContext) {
     // ),
     // new PHPCSDiagnosticProvider(context),
     // new PHPStan(context),
-    // new DrupalStatusBar(context),
+    new DrupalStatusBar(context),
 
     // Commands
-    // new ShowOutputChannel(),
+    new ShowOutputChannel(),
   );
 }
 

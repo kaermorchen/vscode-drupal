@@ -3,10 +3,8 @@ import {
   StatusBarAlignment,
   StatusBarItem,
   window,
-  workspace,
 } from 'vscode';
 import ShowOutputChannel from '../commands/show-output-channel';
-import getWorkspaceFolders from '../utils/get-workspace-folders';
 import Context from './context';
 
 export default class DrupalStatusBar extends Context {
@@ -23,11 +21,9 @@ export default class DrupalStatusBar extends Context {
     this.statusBarItem.name = 'Drupal';
     this.statusBarItem.command = ShowOutputChannel.id;
     this.statusBarItem.text = `$(drupal-logo) Drupal`;
-    this.disposables.push(this.statusBarItem);
+    this.statusBarItem.show();
 
-    if (this.context.workspaceState.get('drupal')) {
-      this.statusBarItem.show();
-    }
+    this.disposables.push(this.statusBarItem);
 
     return this;
   }
