@@ -1,9 +1,8 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
   CompletionItemProvider,
-  ExtensionContext,
+  FileSystemWatcher,
   languages,
   MarkdownString,
   TextDocument,
@@ -11,8 +10,6 @@ import {
   workspace,
 } from 'vscode';
 import { Global } from 'php-parser';
-import { join } from 'path';
-import { constants } from 'fs';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import Provider from './provider';
@@ -26,17 +23,24 @@ export default class GlobalVariablesCompletionProvider
 
   apiCompletion: CompletionItem[] = [];
   drupalWorkspace: DrupalWorkspace;
+  watcher: FileSystemWatcher;
 
   constructor(drupalWorkspace: DrupalWorkspace) {
     super();
 
     this.drupalWorkspace = drupalWorkspace;
+    this.watcher = workspace.createFileSystemWatcher(
+      this.drupalWorkspace.getRelativePattern('web/core/globals.api.php')
+    );
+
+    this.watcher.onDidChange(this.parseApiFiles, this, this.disposables);
 
     this.drupalWorkspace.disposables.push(
       languages.registerCompletionItemProvider(
         GlobalVariablesCompletionProvider.language,
         this
-      )
+      ),
+      this.watcher
     );
 
     this.parseApiFiles();
@@ -60,10 +64,9 @@ export default class GlobalVariablesCompletionProvider
   }
 
   async getFileCompletions(uri: Uri): Promise<CompletionItem[]> {
-    const filePath = uri.fsPath;
     const completions: CompletionItem[] = [];
-    const text = await readFile(filePath, 'utf8');
-    const tree = phpParser.parseCode(text, filePath);
+    const buffer = await workspace.fs.readFile(uri);
+    const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
 
     for (const item of tree.children) {
       if (item.kind !== 'global') {

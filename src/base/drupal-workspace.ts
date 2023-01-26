@@ -28,6 +28,10 @@ export default class DrupalWorkspace extends Context {
     this.initDrupalModules();
   }
 
+  getRelativePattern(include: string): RelativePattern {
+    return new RelativePattern(this.workspaceFolder, include);
+  }
+
   async findFile(include: string): Promise<Uri | undefined> {
     const result = await workspace.findFiles(
       new RelativePattern(this.workspaceFolder, include),
