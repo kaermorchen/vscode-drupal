@@ -64,14 +64,14 @@ export async function activate(context: ExtensionContext) {
     // ),
     // languages.registerDocumentFormattingEditProvider(
     //   PHPCBFDocumentFormattingProvider.language,
-    //   new PHPCBFDocumentFormattingProvider(context)
+    //   new PHPCBFDocumentFormattingProvider()
     // ),
     // new PHPCSDiagnosticProvider(context),
     // new PHPStan(context),
     new DrupalStatusBar(context),
 
     // Commands
-    new ShowOutputChannel(),
+    new ShowOutputChannel()
   );
 }
 
