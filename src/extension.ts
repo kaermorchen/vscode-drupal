@@ -10,6 +10,7 @@ import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
 import DrupalStatusBar from './base/drupal-status-bar';
+import Main from './base/main';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
@@ -48,7 +49,7 @@ export function activate(context: ExtensionContext) {
     new DrupalStatusBarItem(),
 
     // Commands
-    new ShowOutputChannel(),
+    // new ShowOutputChannel(),
   );
 }
 
