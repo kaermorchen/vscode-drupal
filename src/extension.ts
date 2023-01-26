@@ -8,39 +8,39 @@ import PHPStan from './providers/phpstan';
 import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
-import DrupalStatusBarItem from './status-bar';
+import DrupalStatusBar from './base/drupal-status-bar';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
-    languages.registerCompletionItemProvider(
-      TwigCompletionProvider.language,
-      new TwigCompletionProvider(context)
-    ),
-    languages.registerCompletionItemProvider(
-      HookCompletionProvider.language,
-      new HookCompletionProvider(context)
-    ),
-    languages.registerCompletionItemProvider(
-      GlobalVariablesCompletionProvider.language,
-      new GlobalVariablesCompletionProvider(context)
-    ),
-    languages.registerCompletionItemProvider(
-      ServicesCompletionProvider.language,
-      new ServicesCompletionProvider(context),
-      '"', "'"
-    ),
-    languages.registerCompletionItemProvider(
-      RoutingCompletionProvider.language,
-      new RoutingCompletionProvider(context),
-      '"', "'"
-    ),
-    languages.registerDocumentFormattingEditProvider(
-      PHPCBFDocumentFormattingProvider.language,
-      new PHPCBFDocumentFormattingProvider(context)
-    ),
-    new PHPCSDiagnosticProvider(context),
-    new PHPStan(context),
-    new DrupalStatusBarItem(),
+    // languages.registerCompletionItemProvider(
+    //   TwigCompletionProvider.language,
+    //   new TwigCompletionProvider(context)
+    // ),
+    // languages.registerCompletionItemProvider(
+    //   HookCompletionProvider.language,
+    //   new HookCompletionProvider(context)
+    // ),
+    // languages.registerCompletionItemProvider(
+    //   GlobalVariablesCompletionProvider.language,
+    //   new GlobalVariablesCompletionProvider(context)
+    // ),
+    // languages.registerCompletionItemProvider(
+    //   ServicesCompletionProvider.language,
+    //   new ServicesCompletionProvider(context),
+    //   '"', "'"
+    // ),
+    // languages.registerCompletionItemProvider(
+    //   RoutingCompletionProvider.language,
+    //   new RoutingCompletionProvider(context),
+    //   '"', "'"
+    // ),
+    // languages.registerDocumentFormattingEditProvider(
+    //   PHPCBFDocumentFormattingProvider.language,
+    //   new PHPCBFDocumentFormattingProvider(context)
+    // ),
+    // new PHPCSDiagnosticProvider(context),
+    // new PHPStan(context),
+    new DrupalStatusBar(context),
 
     // Commands
     new ShowOutputChannel(),
