@@ -53,10 +53,6 @@ export async function activate(context: ExtensionContext) {
     //   new HookCompletionProvider(context)
     // ),
     // languages.registerCompletionItemProvider(
-    //   GlobalVariablesCompletionProvider.language,
-    //   new GlobalVariablesCompletionProvider(context)
-    // ),
-    // languages.registerCompletionItemProvider(
     //   ServicesCompletionProvider.language,
     //   new ServicesCompletionProvider(context),
     //   '"', "'"
