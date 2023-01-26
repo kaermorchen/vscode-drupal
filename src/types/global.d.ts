@@ -1,4 +1,4 @@
-import { CompletionItem } from "vscode";
+import { CompletionItem } from 'vscode';
 
 declare module 'doc-parser' {
   interface Doc {
