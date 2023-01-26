@@ -9,9 +9,11 @@ import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
 import DrupalStatusBar from './base/drupal-status-bar';
+import Main from './base/main';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
+    new Main(context),
     // languages.registerCompletionItemProvider(
     //   TwigCompletionProvider.language,
     //   new TwigCompletionProvider(context)
@@ -40,10 +42,10 @@ export function activate(context: ExtensionContext) {
     // ),
     // new PHPCSDiagnosticProvider(context),
     // new PHPStan(context),
-    new DrupalStatusBar(context),
+    // new DrupalStatusBar(context),
 
     // Commands
-    new ShowOutputChannel(),
+    // new ShowOutputChannel(),
   );
 }
 
