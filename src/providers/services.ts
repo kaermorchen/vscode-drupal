@@ -25,8 +25,8 @@ export default class ServicesCompletionProvider extends Provider {
   contribServices: CompletionItem[] = [];
   customServices: CompletionItem[] = [];
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor() {
+    super();
 
     this.parseApiFiles();
   }

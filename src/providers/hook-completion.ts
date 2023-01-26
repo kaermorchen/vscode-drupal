@@ -28,8 +28,8 @@ export default class HookCompletionProvider extends Provider {
   apiCompletion: CompletionItem[] = [];
   apiCompletionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor() {
+    super();
 
     this.parseApiFiles();
   }
