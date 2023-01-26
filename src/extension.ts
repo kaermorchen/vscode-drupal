@@ -9,7 +9,7 @@ import PHPStan from './providers/phpstan';
 import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
-import DrupalStatusBarItem from './status-bar';
+import DrupalStatusBar from './base/drupal-status-bar';
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(
