@@ -1,88 +1,66 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  ExtensionContext,
-  Uri,
+  CompletionItemProvider,
+  languages,
   workspace,
 } from 'vscode';
 import { basename } from 'path';
-import { constants } from 'fs';
 import Provider from './provider';
 import { parse } from 'yaml';
+import DrupalWorkspace from '../base/drupal-workspace';
 
-export default class RoutingCompletionProvider extends Provider {
+export default class RoutingCompletionProvider
+  extends Provider
+  implements CompletionItemProvider
+{
   static language = 'php';
 
-  contribRouting: CompletionItem[] = [];
-  customRouting: CompletionItem[] = [];
+  drupalWorkspace: DrupalWorkspace;
+  completions: CompletionItem[] = [];
+  include: string;
 
-  constructor(context: ExtensionContext) {
+  constructor(drupalWorkspace: DrupalWorkspace, include: string) {
     super();
 
-    this.parseApiFiles();
+    this.drupalWorkspace = drupalWorkspace;
+    this.include = include;
+
+    this.drupalWorkspace.disposables.push(
+      languages.registerCompletionItemProvider(
+        RoutingCompletionProvider.language,
+        this,
+        '"',
+        "'"
+      )
+    );
+
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
-    const workspacePath = await this.getWorkspacePath();
+  async parseFiles() {
+    const uris = await this.drupalWorkspace.findFiles(this.include);
 
-    if (!workspacePath) {
-      return;
-    }
+    this.completions = [];
 
-    const contribRouting = [
-      ...(await workspace.findFiles('web/core/modules/*/*.routing.yml')),
-      ...(await workspace.findFiles('web/modules/contrib/*/*.routing.yml')),
-    ];
-    const customRouting = await workspace.findFiles('web/modules/custom/*/*.routing.yml');
+    for (const uri of uris) {
+      const buffer = await workspace.fs.readFile(uri);
+      const moduleName = basename(uri.path, '.routing.yml');
+      const yaml = parse(buffer.toString());
 
-    this.contribRouting = await this.parseCompletions(contribRouting);
-    this.customRouting = await this.parseCompletions(customRouting);
-  }
+      for (const name in yaml) {
+        const completion: CompletionItem = {
+          label: name,
+          kind: CompletionItemKind.Keyword,
+          detail: `Route ${moduleName}`,
+        };
 
-  async parseCompletions(uris: Uri[]): Promise<CompletionItem[]> {
-    const result = [];
-
-    for (const file of uris) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          result.push(...completions);
-        }
-      } catch (e) {
-        console.error(e);
+        this.completions.push(completion);
       }
     }
-
-    return result;
   }
 
-  async provideCompletionItems() {
-    if (this.customRouting.length) {
-      return this.contribRouting.concat(this.customRouting);
-    } else {
-      return this.contribRouting;
-    }
-  }
-
-  async getFileCompletions(filePath: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const text = await readFile(filePath.fsPath, 'utf8');
-    const moduleName = basename(filePath.path, '.routing.yml');
-    const yaml = parse(text);
-
-    for (const name in yaml) {
-      const completion: CompletionItem = {
-        label: name,
-        kind: CompletionItemKind.Keyword,
-        detail: `Route ${moduleName}`,
-      };
-
-      completions.push(completion);
-    }
-
-    return completions;
+  provideCompletionItems() {
+    return this.completions;
   }
 }

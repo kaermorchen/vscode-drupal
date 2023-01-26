@@ -7,6 +7,7 @@ import {
   WorkspaceFolder,
 } from 'vscode';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
+import RoutingCompletionProvider from '../providers/routing';
 import Context from './context';
 import DrupalCoreModule from './drupal-core-module';
 
@@ -18,12 +19,22 @@ export default class DrupalWorkspace extends Context {
   coreModules: DrupalCoreModule[] = [];
   workspaceFolder: WorkspaceFolder;
   globalVariables: GlobalVariablesCompletionProvider;
+  coreRoutingCompletionProvider: RoutingCompletionProvider;
+  contribRoutingCompletionProvider: RoutingCompletionProvider;
 
   constructor(context: ExtensionContext, workspaceFolder: WorkspaceFolder) {
     super(context);
 
     this.workspaceFolder = workspaceFolder;
     this.globalVariables = new GlobalVariablesCompletionProvider(this);
+    this.coreRoutingCompletionProvider = new RoutingCompletionProvider(
+      this,
+      'web/core/modules/*/*.routing.yml'
+    );
+    this.contribRoutingCompletionProvider = new RoutingCompletionProvider(
+      this,
+      'web/modules/contrib/*/*.routing.yml'
+    );
 
     this.initDrupalModules();
   }

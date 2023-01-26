@@ -46,7 +46,6 @@ export async function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     ...drupalWorkspaces,
-
     new DrupalStatusBar(context),
 
     // Commands
