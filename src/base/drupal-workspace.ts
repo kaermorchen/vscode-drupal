@@ -8,6 +8,7 @@ import {
   WorkspaceFolder,
 } from 'vscode';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
+import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
 import RoutingCompletionProvider from '../providers/routing';
 import Context from './context';
 import DrupalCoreModule from './drupal-core-module';
@@ -23,6 +24,7 @@ export default class DrupalWorkspace extends Context {
   globalVariables: GlobalVariablesCompletionProvider;
   coreRoutingCompletionProvider: RoutingCompletionProvider;
   contribRoutingCompletionProvider: RoutingCompletionProvider;
+  phpcbf: PHPCBFDocumentFormattingProvider;
 
   constructor(context: ExtensionContext, workspaceFolder: WorkspaceFolder) {
     super(context);
@@ -40,12 +42,14 @@ export default class DrupalWorkspace extends Context {
       this,
       'web/modules/contrib/*/*.routing.yml'
     );
+    this.phpcbf = new PHPCBFDocumentFormattingProvider(this);
 
     this.disposables.push(
       this.composerWatcher,
       this.globalVariables,
       this.coreRoutingCompletionProvider,
-      this.contribRoutingCompletionProvider
+      this.contribRoutingCompletionProvider,
+      this.phpcbf
     );
 
     this.initDrupalModules();

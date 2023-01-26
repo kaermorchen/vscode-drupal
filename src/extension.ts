@@ -49,7 +49,7 @@ export async function activate(context: ExtensionContext) {
     new DrupalStatusBar(context),
 
     // Commands
-    new ShowOutputChannel(),
+    new ShowOutputChannel()
   );
 }
 

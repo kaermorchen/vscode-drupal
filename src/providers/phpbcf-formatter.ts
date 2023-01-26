@@ -6,13 +6,37 @@ import {
   CancellationToken,
   TextEdit,
   window,
-  workspace,
+  DocumentFormattingEditProvider,
+  languages,
 } from 'vscode';
 import { extname, join } from 'path';
 import Provider from './provider';
+import DrupalWorkspace from '../base/drupal-workspace';
 
-export default class PHPCBFDocumentFormattingProvider extends Provider {
+export default class PHPCBFDocumentFormattingProvider
+  extends Provider
+  implements DocumentFormattingEditProvider
+{
   static language = 'php';
+
+  drupalWorkspace: DrupalWorkspace;
+
+  constructor(drupalWorkspace: DrupalWorkspace) {
+    super();
+
+    this.drupalWorkspace = drupalWorkspace;
+
+    this.disposables.push(
+      languages.registerDocumentFormattingEditProvider(
+        {
+          language: PHPCBFDocumentFormattingProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
+        this
+      )
+    );
+  }
 
   async provideDocumentFormattingEdits(
     document: TextDocument,
@@ -32,12 +56,6 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
       return [];
     }
 
-    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-
-    if (!workspaceFolder) {
-      return [];
-    }
-
     return new Promise((resolve, reject) => {
       const filePath = document.uri.path;
       const spawnOptions = {
@@ -45,7 +63,7 @@ export default class PHPCBFDocumentFormattingProvider extends Provider {
         timeout: 1000 * 60 * 1, // 1 minute
       };
       const args = [
-        join(workspaceFolder.uri.fsPath, executablePath),
+        join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
         ...config.get('args', []),
         '-q',
         `--stdin-path=${filePath}`,
