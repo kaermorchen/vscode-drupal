@@ -35,7 +35,7 @@ export default class PHPCSDiagnosticProvider extends Provider {
   collection: DiagnosticCollection;
 
   constructor(context: ExtensionContext) {
-    super(context);
+    super();
 
     this.collection = languages.createDiagnosticCollection();
     this.disposables.push(this.collection);

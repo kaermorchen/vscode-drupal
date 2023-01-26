@@ -18,7 +18,7 @@ export default class RoutingCompletionProvider extends Provider {
   customRouting: CompletionItem[] = [];
 
   constructor(context: ExtensionContext) {
-    super(context);
+    super();
 
     this.parseApiFiles();
   }
