@@ -28,10 +28,10 @@ export default class ServicesCompletionProvider extends Provider {
   constructor() {
     super();
 
-    this.parseApiFiles();
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
+  async parseFiles() {
     const workspacePath = await this.getWorkspacePath();
 
     if (!workspacePath) {

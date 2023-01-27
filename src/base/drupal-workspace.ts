@@ -8,6 +8,7 @@ import {
   WorkspaceFolder,
 } from 'vscode';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
+import HookCompletionProvider from '../providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from '../providers/phpcs-diagnostic';
 import PHPStanDiagnosticProvider from '../providers/phpstan';
@@ -27,6 +28,8 @@ export default class DrupalWorkspace extends Context {
   globalVariables: GlobalVariablesCompletionProvider;
   coreRoutingCompletionProvider: RoutingCompletionProvider;
   contribRoutingCompletionProvider: RoutingCompletionProvider;
+  coreHookCompletionProvider: HookCompletionProvider;
+  contribHookCompletionProvider: HookCompletionProvider;
   phpcbf: PHPCBFDocumentFormattingProvider;
   phpcs: PHPCSDiagnosticProvider;
   phpstan: PHPStanDiagnosticProvider;
@@ -48,6 +51,14 @@ export default class DrupalWorkspace extends Context {
       this,
       'web/modules/contrib/*/*.routing.yml'
     );
+    this.coreHookCompletionProvider = new HookCompletionProvider(
+      this,
+      'web/{core,core/modules/*}/*.api.php'
+    );
+    this.contribHookCompletionProvider = new HookCompletionProvider(
+      this,
+      'web/modules/contrib/*/*.api.php'
+    );
     this.phpcbf = new PHPCBFDocumentFormattingProvider(this);
     this.phpcs = new PHPCSDiagnosticProvider(this);
     this.phpstan = new PHPStanDiagnosticProvider(this);
@@ -58,6 +69,8 @@ export default class DrupalWorkspace extends Context {
       this.globalVariables,
       this.coreRoutingCompletionProvider,
       this.contribRoutingCompletionProvider,
+      this.coreHookCompletionProvider,
+      this.contribHookCompletionProvider,
       this.phpcbf,
       this.phpcs,
       this.phpstan,
