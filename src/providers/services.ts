@@ -1,17 +1,17 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  ExtensionContext,
+  CompletionItemProvider,
+  languages,
   Position,
   TextDocument,
   Uri,
   workspace,
 } from 'vscode';
-import { basename, join } from 'path';
-import { constants } from 'fs';
+import { basename } from 'path';
 import Provider from './provider';
 import { parse } from 'yaml';
+import DrupalWorkspace from '../base/drupal-workspace';
 
 const prefixes = [
   'Drupal::service(',
@@ -19,66 +19,53 @@ const prefixes = [
   '$container->getDefinition(',
 ];
 
-export default class ServicesCompletionProvider extends Provider {
+export default class ServicesCompletionProvider
+  extends Provider
+  implements CompletionItemProvider
+{
   static language = 'php';
 
-  contribServices: CompletionItem[] = [];
-  customServices: CompletionItem[] = [];
+  completions: CompletionItem[] = [];
+  drupalWorkspace: DrupalWorkspace;
+  include: string;
 
-  constructor() {
+  constructor(drupalWorkspace: DrupalWorkspace, include: string) {
     super();
+
+    this.drupalWorkspace = drupalWorkspace;
+    this.include = include;
+
+    this.drupalWorkspace.composerWatcher.onDidChange(
+      this.parseFiles,
+      this,
+      this.disposables
+    );
+
+    this.disposables.push(
+      languages.registerCompletionItemProvider(
+        ServicesCompletionProvider.language,
+        this,
+        '"',
+        "'"
+      )
+    );
 
     this.parseFiles();
   }
 
   async parseFiles() {
-    const workspacePath = await this.getWorkspacePath();
+    const uris = await this.drupalWorkspace.findFiles(this.include, null);
+    this.completions = [];
 
-    if (!workspacePath) {
-      return;
-    }
-
-    const contribServices = [
-      Uri.file(join(workspacePath, 'web/core/core.services.yml')),
-      ...(await workspace.findFiles('web/core/modules/*/*.services.yml')),
-      ...(await workspace.findFiles('web/modules/contrib/*/*.services.yml')),
-    ];
-
-    for (const file of contribServices) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          this.contribServices.push(...completions);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    const customServices = [
-      ...(await workspace.findFiles('web/modules/custom/*/*.services.yml')),
-    ];
-
-    for (const file of customServices) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          this.customServices.push(...completions);
-        }
-      } catch (e) {
-        console.error(e);
-      }
+    for (const uri of uris) {
+      await this.extractFileCompletions(uri);
     }
   }
 
   async provideCompletionItems(document: TextDocument, position: Position) {
     if (
-      typeof document === 'undefined' ||
-      document.languageId !== ServicesCompletionProvider.language
+      this.drupalWorkspace.workspaceFolder !==
+      workspace.getWorkspaceFolder(document.uri)
     ) {
       return [];
     }
@@ -87,22 +74,17 @@ export default class ServicesCompletionProvider extends Provider {
       .lineAt(position)
       .text.substring(0, position.character);
 
-    if (!prefixes.some(item => linePrefix.includes(item))) {
+    if (!prefixes.some((item) => linePrefix.includes(item))) {
       return [];
     }
 
-    if (this.customServices.length) {
-      return this.contribServices.concat(this.customServices);
-    } else {
-      return this.contribServices;
-    }
+    return this.completions;
   }
 
-  async getFileCompletions(filePath: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const text = await readFile(filePath.fsPath, 'utf8');
-    const moduleName = basename(filePath.path, '.services.yml');
-    const yaml = parse(text);
+  async extractFileCompletions(uri: Uri) {
+    const buffer = await workspace.fs.readFile(uri);
+    const moduleName = basename(uri.path, '.services.yml');
+    const yaml = parse(buffer.toString());
 
     if ('services' in yaml) {
       for (const name in yaml.services) {
@@ -112,10 +94,8 @@ export default class ServicesCompletionProvider extends Provider {
           detail: `Service`,
         };
 
-        completions.push(completion);
+        this.completions.push(completion);
       }
     }
-
-    return completions;
   }
 }
