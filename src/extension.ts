@@ -9,7 +9,7 @@ import GlobalVariablesCompletionProvider from './providers/global-variables';
 import HookCompletionProvider from './providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
-import PHPStan from './providers/phpstan';
+import PHPStanDiagnosticProvider from './providers/phpstan';
 import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
