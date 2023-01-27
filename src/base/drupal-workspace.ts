@@ -56,7 +56,8 @@ export default class DrupalWorkspace extends Context {
       this.coreRoutingCompletionProvider,
       this.contribRoutingCompletionProvider,
       this.phpcbf,
-      this.phpcs
+      this.phpcs,
+      this.phpstan
     );
 
     this.initDrupalModules();
