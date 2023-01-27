@@ -10,6 +10,7 @@ import {
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
 import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from '../providers/phpcs-diagnostic';
+import PHPStanDiagnosticProvider from '../providers/phpstan';
 import RoutingCompletionProvider from '../providers/routing';
 import Context from './context';
 import DrupalCoreModule from './drupal-core-module';
@@ -27,6 +28,7 @@ export default class DrupalWorkspace extends Context {
   contribRoutingCompletionProvider: RoutingCompletionProvider;
   phpcbf: PHPCBFDocumentFormattingProvider;
   phpcs: PHPCSDiagnosticProvider;
+  phpstan: PHPStanDiagnosticProvider;
 
   constructor(context: ExtensionContext, workspaceFolder: WorkspaceFolder) {
     super(context);
@@ -46,6 +48,7 @@ export default class DrupalWorkspace extends Context {
     );
     this.phpcbf = new PHPCBFDocumentFormattingProvider(this);
     this.phpcs = new PHPCSDiagnosticProvider(this);
+    this.phpstan = new PHPStanDiagnosticProvider(this);
 
     this.disposables.push(
       this.composerWatcher,

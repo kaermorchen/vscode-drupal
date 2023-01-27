@@ -2,8 +2,6 @@ import { spawn } from 'child_process';
 import {
   Diagnostic,
   DiagnosticSeverity,
-  DiagnosticCollection,
-  ExtensionContext,
   languages,
   window,
   TextDocument,
@@ -13,6 +11,7 @@ import {
 } from 'vscode';
 import { join } from 'path';
 import Provider from './provider';
+import DrupalWorkspace from '../base/drupal-workspace';
 
 interface Message {
   message: string;
@@ -20,35 +19,43 @@ interface Message {
   line: number;
 }
 
-export default class PHPStan extends Provider {
-  collection: DiagnosticCollection;
+export default class PHPStanDiagnosticProvider extends Provider {
+  collection = languages.createDiagnosticCollection();
 
-  constructor(context: ExtensionContext) {
+  drupalWorkspace: DrupalWorkspace;
+
+  constructor(drupalWorkspace: DrupalWorkspace) {
     super();
 
-    this.collection = languages.createDiagnosticCollection();
+    this.drupalWorkspace = drupalWorkspace;
+
     this.disposables.push(this.collection);
 
     if (window.activeTextEditor) {
       this.validate(window.activeTextEditor.document);
     }
 
-    context.subscriptions.push(
-      window.onDidChangeActiveTextEditor((editor) => {
-        // TODO: add file type checking
+    window.onDidChangeActiveTextEditor(
+      (editor) => {
         if (editor) {
           this.validate(editor.document);
         }
-      }),
-      workspace.onDidChangeTextDocument((e) => this.validate(e.document))
+      },
+      this,
+      this.disposables
     );
-  }
 
-  get name() {
-    return 'phpstan';
+    workspace.onDidSaveTextDocument(this.validate, this, this.disposables);
   }
 
   async validate(document: TextDocument) {
+    if (
+      this.drupalWorkspace.workspaceFolder !==
+      workspace.getWorkspaceFolder(document.uri)
+    ) {
+      return;
+    }
+
     const config = this.config;
 
     if (!config.get('enabled')) {
@@ -62,25 +69,19 @@ export default class PHPStan extends Provider {
       return;
     }
 
-    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-
-    if (!workspaceFolder) {
-      return;
-    }
-
     const filePath = document.uri.path;
     const spawnOptions = {
-      cwd: workspaceFolder.uri.fsPath,
+      cwd: this.drupalWorkspace.workspaceFolder.uri.fsPath,
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(workspaceFolder.uri.fsPath, executablePath),
+      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
       ...config.get('args', []),
       '--no-progress',
       '--error-format=json',
       'analyse',
-      filePath
+      filePath,
     ];
 
     // TODO: add abort signal
@@ -99,7 +100,10 @@ export default class PHPStan extends Provider {
             message: obj.message,
             source: this.source,
             range: new Range(
-              new Position(line.lineNumber, line.firstNonWhitespaceCharacterIndex),
+              new Position(
+                line.lineNumber,
+                line.firstNonWhitespaceCharacterIndex
+              ),
               new Position(line.lineNumber, line.range.end.character)
             ),
           });
@@ -112,5 +116,9 @@ export default class PHPStan extends Provider {
     process.stderr.on('data', (data) => {
       console.error(`stderr: ${data}`);
     });
+  }
+
+  get name() {
+    return 'phpstan';
   }
 }
