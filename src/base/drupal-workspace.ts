@@ -13,6 +13,7 @@ import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
 import PHPCSDiagnosticProvider from '../providers/phpcs-diagnostic';
 import PHPStanDiagnosticProvider from '../providers/phpstan';
 import RoutingCompletionProvider from '../providers/routing';
+import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import Context from './context';
 import DrupalCoreModule from './drupal-core-module';
@@ -30,6 +31,8 @@ export default class DrupalWorkspace extends Context {
   contribRoutingCompletionProvider: RoutingCompletionProvider;
   coreHookCompletionProvider: HookCompletionProvider;
   contribHookCompletionProvider: HookCompletionProvider;
+  coreServicesCompletionProvider: ServicesCompletionProvider;
+  contribServicesCompletionProvider: ServicesCompletionProvider;
   phpcbf: PHPCBFDocumentFormattingProvider;
   phpcs: PHPCSDiagnosticProvider;
   phpstan: PHPStanDiagnosticProvider;
@@ -59,6 +62,14 @@ export default class DrupalWorkspace extends Context {
       this,
       'web/modules/contrib/*/*.api.php'
     );
+    this.coreServicesCompletionProvider = new ServicesCompletionProvider(
+      this,
+      'web/{core,core/modules/*}/*.services.yml'
+    );
+    this.contribServicesCompletionProvider = new ServicesCompletionProvider(
+      this,
+      'web/modules/contrib/*/*.services.yml'
+    );
     this.phpcbf = new PHPCBFDocumentFormattingProvider(this);
     this.phpcs = new PHPCSDiagnosticProvider(this);
     this.phpstan = new PHPStanDiagnosticProvider(this);
@@ -71,6 +82,8 @@ export default class DrupalWorkspace extends Context {
       this.contribRoutingCompletionProvider,
       this.coreHookCompletionProvider,
       this.contribHookCompletionProvider,
+      this.coreServicesCompletionProvider,
+      this.contribServicesCompletionProvider,
       this.phpcbf,
       this.phpcs,
       this.phpstan,
