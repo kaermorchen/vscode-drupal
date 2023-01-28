@@ -13,36 +13,27 @@ import { Function as ASTFunction } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
-import DrupalWorkspace from '../base/drupal-workspace';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
 } as const;
 
 export default class HookCompletionProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
   static language = 'php';
 
-  drupalWorkspace: DrupalWorkspace;
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
-  include: string;
 
-  constructor(drupalWorkspace: DrupalWorkspace, include: string) {
-    super();
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
-    this.drupalWorkspace = drupalWorkspace;
-    this.include = include;
-
-    this.drupalWorkspace.composerWatcher.onDidChange(
-      this.parseFiles,
-      this,
-      this.disposables
-    );
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -55,7 +46,7 @@ export default class HookCompletionProvider
   }
 
   async parseFiles() {
-    const uris = await this.drupalWorkspace.findFiles(this.include, null);
+    const uris = await this.drupalWorkspace.findFiles(this.pattern, null);
     this.completions = [];
 
     for (const uri of uris) {

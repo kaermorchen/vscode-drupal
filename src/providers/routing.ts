@@ -7,31 +7,23 @@ import {
   workspace,
 } from 'vscode';
 import { basename } from 'path';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import { parse } from 'yaml';
 import DrupalWorkspace from '../base/drupal-workspace';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class RoutingCompletionProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
   static language = 'php';
 
-  drupalWorkspace: DrupalWorkspace;
   completions: CompletionItem[] = [];
-  include: string;
 
-  constructor(drupalWorkspace: DrupalWorkspace, include: string) {
-    super();
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
-    this.drupalWorkspace = drupalWorkspace;
-    this.include = include;
-
-    this.drupalWorkspace.composerWatcher.onDidChange(
-      this.parseFiles,
-      this,
-      this.disposables
-    );
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -46,7 +38,7 @@ export default class RoutingCompletionProvider
   }
 
   async parseFiles() {
-    const uris = await this.drupalWorkspace.findFiles(this.include);
+    const uris = await this.drupalWorkspace.findFiles(this.pattern);
 
     this.completions = [];
 

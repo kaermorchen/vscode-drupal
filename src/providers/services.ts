@@ -9,9 +9,10 @@ import {
   workspace,
 } from 'vscode';
 import { basename } from 'path';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import { parse } from 'yaml';
 import DrupalWorkspace from '../base/drupal-workspace';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const prefixes = [
   'Drupal::service(',
@@ -20,26 +21,17 @@ const prefixes = [
 ];
 
 export default class ServicesCompletionProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
   static language = 'php';
 
   completions: CompletionItem[] = [];
-  drupalWorkspace: DrupalWorkspace;
-  include: string;
 
-  constructor(drupalWorkspace: DrupalWorkspace, include: string) {
-    super();
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
-    this.drupalWorkspace = drupalWorkspace;
-    this.include = include;
-
-    this.drupalWorkspace.composerWatcher.onDidChange(
-      this.parseFiles,
-      this,
-      this.disposables
-    );
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -54,7 +46,7 @@ export default class ServicesCompletionProvider
   }
 
   async parseFiles() {
-    const uris = await this.drupalWorkspace.findFiles(this.include, null);
+    const uris = await this.drupalWorkspace.findFiles(this.pattern, null);
     this.completions = [];
 
     for (const uri of uris) {

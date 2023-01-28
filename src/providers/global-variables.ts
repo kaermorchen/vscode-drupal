@@ -11,28 +11,21 @@ import {
 import { Global } from 'php-parser';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import Provider from './provider';
-import DrupalWorkspace from '../base/drupal-workspace';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class GlobalVariablesCompletionProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
   static language = 'php';
 
   completion: CompletionItem[] = [];
-  drupalWorkspace: DrupalWorkspace;
 
-  constructor(drupalWorkspace: DrupalWorkspace) {
-    super();
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
-    this.drupalWorkspace = drupalWorkspace;
-
-    this.drupalWorkspace.composerWatcher.onDidChange(
-      this.parseFiles,
-      this,
-      this.disposables
-    );
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -45,9 +38,7 @@ export default class GlobalVariablesCompletionProvider
   }
 
   async parseFiles() {
-    const result = await this.drupalWorkspace.findFile(
-      'web/core/globals.api.php'
-    );
+    const result = await this.drupalWorkspace.findFile(this.pattern);
 
     if (result) {
       this.completion = await this.getFileCompletions(result);

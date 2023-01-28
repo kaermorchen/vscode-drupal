@@ -10,28 +10,24 @@ import {
   languages,
 } from 'vscode';
 import { extname, join } from 'path';
-import Provider from './provider';
-import DrupalWorkspace from '../base/drupal-workspace';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class PHPCBFDocumentFormattingProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements DocumentFormattingEditProvider
 {
   static language = 'php';
 
-  drupalWorkspace: DrupalWorkspace;
-
-  constructor(drupalWorkspace: DrupalWorkspace) {
-    super();
-
-    this.drupalWorkspace = drupalWorkspace;
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
     this.disposables.push(
       languages.registerDocumentFormattingEditProvider(
         {
           language: PHPCBFDocumentFormattingProvider.language,
           scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**'),
+          pattern: this.pattern,
         },
         this
       )
