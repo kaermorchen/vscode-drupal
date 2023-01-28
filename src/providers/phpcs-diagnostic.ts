@@ -10,8 +10,8 @@ import {
   Position,
 } from 'vscode';
 import { extname, join } from 'path';
-import Provider from './provider';
-import DrupalWorkspace from '../base/drupal-workspace';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -30,15 +30,11 @@ interface LinterMessage {
   column: number;
 }
 
-export default class PHPCSDiagnosticProvider extends Provider {
+export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
 
-  drupalWorkspace: DrupalWorkspace;
-
-  constructor(drupalWorkspace: DrupalWorkspace) {
-    super();
-
-    this.drupalWorkspace = drupalWorkspace;
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
     this.disposables.push(this.collection);
 

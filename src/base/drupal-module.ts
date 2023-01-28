@@ -1,7 +1,7 @@
 import { ExtensionContext, Uri } from 'vscode';
 import Context from './context';
 
-export default class DrupalCoreModule extends Context {
+export default class DrupalModule extends Context {
   uri: Uri;
 
   constructor(args: { context: ExtensionContext; uri: Uri }) {

@@ -10,8 +10,8 @@ import {
   Position,
 } from 'vscode';
 import { join } from 'path';
-import Provider from './provider';
-import DrupalWorkspace from '../base/drupal-workspace';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 interface Message {
   message: string;
@@ -19,15 +19,11 @@ interface Message {
   line: number;
 }
 
-export default class PHPStanDiagnosticProvider extends Provider {
+export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
 
-  drupalWorkspace: DrupalWorkspace;
-
-  constructor(drupalWorkspace: DrupalWorkspace) {
-    super();
-
-    this.drupalWorkspace = drupalWorkspace;
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
     this.disposables.push(this.collection);
 

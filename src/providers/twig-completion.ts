@@ -11,10 +11,12 @@ import {
 import { Class as ASTClass, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
-import { CompletionItemWithCallback } from '../types/global';
-import DrupalWorkspace from '../base/drupal-workspace';
+import {
+  CompletionItemWithCallback,
+  DrupalWorkspaceProviderConstructorArguments,
+} from '../types';
 
 const astFileCache = new Map<string, ASTClass>();
 
@@ -135,16 +137,13 @@ const twigFilters: CompletionItemWithCallback[] = [
 const twigAll = twigFunctions.concat(twigFilters);
 
 export default class TwigCompletionProvider
-  extends Provider
+  extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
   static language = 'twig';
-  drupalWorkspace: DrupalWorkspace;
 
-  constructor(drupalWorkspace: DrupalWorkspace) {
-    super();
-
-    this.drupalWorkspace = drupalWorkspace;
+  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+    super(args);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(

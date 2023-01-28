@@ -2,6 +2,7 @@ import { dirname } from 'path';
 import {
   ExtensionContext,
   FileSystemWatcher,
+  FileType,
   RelativePattern,
   Uri,
   workspace,
@@ -16,14 +17,14 @@ import RoutingCompletionProvider from '../providers/routing';
 import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import Context from './context';
-import DrupalCoreModule from './drupal-core-module';
+import DrupalModule from './drupal-module';
 
 type Tail<T extends any[]> = T extends [head: any, ...tail: infer Tail_]
   ? Tail_
   : never;
 
 export default class DrupalWorkspace extends Context {
-  coreModules: DrupalCoreModule[] = [];
+  coreModules: DrupalModule[] = [];
   workspaceFolder: WorkspaceFolder;
   composerWatcher: FileSystemWatcher;
   globalVariables: GlobalVariablesCompletionProvider;
@@ -45,52 +46,60 @@ export default class DrupalWorkspace extends Context {
     this.composerWatcher = workspace.createFileSystemWatcher(
       this.getRelativePattern('composer.json')
     );
-    this.globalVariables = new GlobalVariablesCompletionProvider(this);
-    this.coreRoutingCompletionProvider = new RoutingCompletionProvider(
-      this,
-      'web/core/modules/*/*.routing.yml'
-    );
-    this.contribRoutingCompletionProvider = new RoutingCompletionProvider(
-      this,
-      'web/modules/contrib/*/*.routing.yml'
-    );
-    this.coreHookCompletionProvider = new HookCompletionProvider(
-      this,
-      'web/{core,core/modules/*}/*.api.php'
-    );
-    this.contribHookCompletionProvider = new HookCompletionProvider(
-      this,
-      'web/modules/contrib/*/*.api.php'
-    );
-    this.coreServicesCompletionProvider = new ServicesCompletionProvider(
-      this,
-      'web/{core,core/modules/*}/*.services.yml'
-    );
-    this.contribServicesCompletionProvider = new ServicesCompletionProvider(
-      this,
-      'web/modules/contrib/*/*.services.yml'
-    );
-    this.phpcbf = new PHPCBFDocumentFormattingProvider(this);
-    this.phpcs = new PHPCSDiagnosticProvider(this);
-    this.phpstan = new PHPStanDiagnosticProvider(this);
-    this.twig = new TwigCompletionProvider(this);
 
-    this.disposables.push(
-      this.composerWatcher,
-      this.globalVariables,
-      this.coreRoutingCompletionProvider,
-      this.contribRoutingCompletionProvider,
-      this.coreHookCompletionProvider,
-      this.contribHookCompletionProvider,
-      this.coreServicesCompletionProvider,
-      this.contribServicesCompletionProvider,
-      this.phpcbf,
-      this.phpcs,
-      this.phpstan,
-      this.twig
-    );
+    this.globalVariables = new GlobalVariablesCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/core/globals.api.php',
+    });
+    this.coreRoutingCompletionProvider = new RoutingCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/core/modules/*/*.routing.yml',
+    });
+    this.contribRoutingCompletionProvider = new RoutingCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/modules/contrib/*/*.routing.yml',
+    });
+    this.coreHookCompletionProvider = new HookCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/{core,core/modules/*}/*.api.php',
+    });
+    this.contribHookCompletionProvider = new HookCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/modules/contrib/*/*.api.php',
+    });
+    this.coreServicesCompletionProvider = new ServicesCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/{core,core/modules/*}/*.services.yml',
+    });
+    this.contribServicesCompletionProvider = new ServicesCompletionProvider({
+      drupalWorkspace: this,
+      watcher: this.composerWatcher,
+      pattern: 'web/modules/contrib/*/*.services.yml',
+    });
+    this.phpcbf = new PHPCBFDocumentFormattingProvider({
+      drupalWorkspace: this,
+      pattern: '**',
+    });
+    this.phpcs = new PHPCSDiagnosticProvider({
+      drupalWorkspace: this,
+      pattern: '*',
+    });
+    this.phpstan = new PHPStanDiagnosticProvider({
+      drupalWorkspace: this,
+      pattern: '*',
+    });
+    this.twig = new TwigCompletionProvider({
+      drupalWorkspace: this,
+      pattern: '*',
+    });
 
-    this.initDrupalModules();
+    // this.initDrupalModules();
   }
 
   getRelativePattern(include: string): RelativePattern {
@@ -118,14 +127,21 @@ export default class DrupalWorkspace extends Context {
   }
 
   async initDrupalModules() {
-    const coreUris = await this.findFiles('web/core/modules/*/*.info.yml');
+    const moduleDirectory = Uri.joinPath(
+      this.workspaceFolder.uri,
+      'web/modules/custom'
+    );
+    const result = await workspace.fs.readDirectory(moduleDirectory);
 
-    for (const uri of coreUris) {
-      const dirUri = Uri.parse(dirname(uri.toString()));
-
-      this.coreModules.push(
-        new DrupalCoreModule({ context: this.context, uri: dirUri })
-      );
+    for (const [name, fileType] of result) {
+      if (fileType === FileType.Directory) {
+        const uri = Uri.joinPath(
+          this.workspaceFolder.uri,
+          'web/modules/custom',
+          name
+        );
+        this.coreModules.push(new DrupalModule({ context: this.context, uri }));
+      }
     }
   }
 }
