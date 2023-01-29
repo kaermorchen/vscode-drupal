@@ -8,6 +8,7 @@ import {
   window,
   DocumentFormattingEditProvider,
   languages,
+  workspace,
 } from 'vscode';
 import { extname, join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
@@ -39,6 +40,13 @@ export default class PHPCBFDocumentFormattingProvider
     options: FormattingOptions,
     token: CancellationToken
   ): Promise<TextEdit[]> {
+    if (
+      this.drupalWorkspace.workspaceFolder !==
+      workspace.getWorkspaceFolder(document.uri)
+    ) {
+      return [];
+    }
+
     const config = this.config;
 
     if (!config.get('enabled')) {
