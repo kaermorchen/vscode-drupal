@@ -24,7 +24,7 @@ type Tail<T extends any[]> = T extends [head: any, ...tail: infer Tail_]
   : never;
 
 export default class DrupalWorkspace extends Context {
-  coreModules: DrupalModule[] = [];
+  customModules: DrupalModule[] = [];
   workspaceFolder: WorkspaceFolder;
   composerWatcher: FileSystemWatcher;
   globalVariables: GlobalVariablesCompletionProvider;
@@ -99,7 +99,7 @@ export default class DrupalWorkspace extends Context {
       pattern: '*',
     });
 
-    // this.initDrupalModules();
+    this.initDrupalModules();
   }
 
   getRelativePattern(include: string): RelativePattern {
@@ -127,9 +127,10 @@ export default class DrupalWorkspace extends Context {
   }
 
   async initDrupalModules() {
+    const customModulesDir = 'web/modules/custom';
     const moduleDirectory = Uri.joinPath(
       this.workspaceFolder.uri,
-      'web/modules/custom'
+      customModulesDir
     );
     const result = await workspace.fs.readDirectory(moduleDirectory);
 
@@ -137,10 +138,16 @@ export default class DrupalWorkspace extends Context {
       if (fileType === FileType.Directory) {
         const uri = Uri.joinPath(
           this.workspaceFolder.uri,
-          'web/modules/custom',
+          customModulesDir,
           name
         );
-        this.coreModules.push(new DrupalModule({ context: this.context, uri }));
+        this.customModules.push(
+          new DrupalModule({
+            drupalWorkspace: this,
+            context: this.context,
+            uri,
+          })
+        );
       }
     }
   }
