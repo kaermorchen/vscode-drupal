@@ -12,20 +12,30 @@ import { Global } from 'php-parser';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
+import {
+  DrupalWorkspaceProviderConstructorArguments,
+  FirstParam,
+} from '../types';
+import Relatively from '../mixins/relatively';
+import Disposable from './disposable';
+import Watcher from '../mixins/watcher';
+
+const Mix = Watcher(Relatively(Disposable));
 
 export default class GlobalVariablesCompletionProvider
-  extends DrupalWorkspaceProvider
+  extends Mix
   implements CompletionItemProvider
 {
   static language = 'php';
 
   completion: CompletionItem[] = [];
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: FirstParam<typeof Mix>) {
+    super(arg);
 
-    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+    if (this.watcher) {
+      this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+    }
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -38,22 +48,22 @@ export default class GlobalVariablesCompletionProvider
   }
 
   async parseFiles() {
-    const result = await this.drupalWorkspace.findFile(this.pattern);
+    this.completion = [];
+
+    const result = await this.findFile(this.pattern);
 
     if (result) {
-      this.completion = await this.getFileCompletions(result);
+      this.getFileCompletions(result);
     }
   }
 
   async provideCompletionItems(document: TextDocument) {
-    return this.drupalWorkspace.workspaceFolder ===
-      workspace.getWorkspaceFolder(document.uri)
+    return this.drupalWorkspace.isCurrentWorkspace(document.uri)
       ? this.completion
       : [];
   }
 
-  async getFileCompletions(uri: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
+  async getFileCompletions(uri: Uri) {
     const buffer = await workspace.fs.readFile(uri);
     const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
 
@@ -83,9 +93,7 @@ export default class GlobalVariablesCompletionProvider
         completion.documentation = new MarkdownString(ast.summary);
       }
 
-      completions.push(completion);
+      this.completion.push(completion);
     }
-
-    return completions;
   }
 }
