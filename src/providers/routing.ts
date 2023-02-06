@@ -1,88 +1,76 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  ExtensionContext,
+  CompletionItemProvider,
+  languages,
+  TextDocument,
   Uri,
   workspace,
 } from 'vscode';
 import { basename } from 'path';
-import { constants } from 'fs';
-import Provider from './provider';
 import { parse } from 'yaml';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
-export default class RoutingCompletionProvider extends Provider {
+export default class RoutingCompletionProvider
+  extends DrupalWorkspaceProviderWithWatcher
+  implements CompletionItemProvider
+{
   static language = 'php';
 
-  contribRouting: CompletionItem[] = [];
-  customRouting: CompletionItem[] = [];
+  completions: CompletionItem[] = [];
+  completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor(
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+  ) {
+    super(arg);
 
-    this.parseApiFiles();
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+
+    this.disposables.push(
+      languages.registerCompletionItemProvider(
+        {
+          language: RoutingCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
+        this,
+        '"',
+        "'"
+      )
+    );
+
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
-    const workspacePath = await this.getWorkspacePath();
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
-    if (!workspacePath) {
-      return;
-    }
+    for (const uri of uris) {
+      const completions: CompletionItem[] = [];
+      const buffer = await workspace.fs.readFile(uri);
+      const moduleName = basename(uri.path, '.routing.yml');
+      const yaml = parse(buffer.toString());
 
-    const contribRouting = [
-      ...(await workspace.findFiles('web/core/modules/*/*.routing.yml')),
-      ...(await workspace.findFiles('web/modules/contrib/*/*.routing.yml')),
-    ];
-    const customRouting = await workspace.findFiles('web/modules/custom/*/*.routing.yml');
-
-    this.contribRouting = await this.parseCompletions(contribRouting);
-    this.customRouting = await this.parseCompletions(customRouting);
-  }
-
-  async parseCompletions(uris: Uri[]): Promise<CompletionItem[]> {
-    const result = [];
-
-    for (const file of uris) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          result.push(...completions);
-        }
-      } catch (e) {
-        console.error(e);
+      for (const name in yaml) {
+        completions.push({
+          label: name,
+          kind: CompletionItemKind.Keyword,
+          detail: `Route ${moduleName}`,
+        });
       }
+
+      this.completionFileCache.set(uri.fsPath, completions);
     }
 
-    return result;
+    this.completions = ([] as CompletionItem[]).concat(
+      ...this.completionFileCache.values()
+    );
   }
 
-  async provideCompletionItems() {
-    if (this.customRouting.length) {
-      return this.contribRouting.concat(this.customRouting);
-    } else {
-      return this.contribRouting;
-    }
-  }
-
-  async getFileCompletions(filePath: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const text = await readFile(filePath.fsPath, 'utf8');
-    const moduleName = basename(filePath.path, '.routing.yml');
-    const yaml = parse(text);
-
-    for (const name in yaml) {
-      const completion: CompletionItem = {
-        label: name,
-        kind: CompletionItemKind.Keyword,
-        detail: `Route ${moduleName}`,
-      };
-
-      completions.push(completion);
-    }
-
-    return completions;
+  provideCompletionItems(document: TextDocument) {
+    return this.drupalWorkspace.hasFile(document.uri) ? this.completions : [];
   }
 }

@@ -1,17 +1,16 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  ExtensionContext,
+  CompletionItemProvider,
+  languages,
   Position,
   TextDocument,
   Uri,
   workspace,
 } from 'vscode';
-import { basename, join } from 'path';
-import { constants } from 'fs';
-import Provider from './provider';
+import { basename } from 'path';
 import { parse } from 'yaml';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
 const prefixes = [
   'Drupal::service(',
@@ -19,67 +18,69 @@ const prefixes = [
   '$container->getDefinition(',
 ];
 
-export default class ServicesCompletionProvider extends Provider {
+export default class ServicesCompletionProvider
+  extends DrupalWorkspaceProviderWithWatcher
+  implements CompletionItemProvider
+{
   static language = 'php';
 
-  contribServices: CompletionItem[] = [];
-  customServices: CompletionItem[] = [];
+  completions: CompletionItem[] = [];
+  completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
+    super(arg);
 
-    this.parseApiFiles();
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+
+    this.disposables.push(
+      languages.registerCompletionItemProvider(
+        {
+          language: ServicesCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
+        this,
+        '"',
+        "'"
+      )
+    );
+
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
-    const workspacePath = await this.getWorkspacePath();
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
-    if (!workspacePath) {
-      return;
-    }
+    for (const uri of uris) {
+      const completions: CompletionItem[] = [];
+      const buffer = await workspace.fs.readFile(uri);
+      const moduleName = basename(uri.path, '.services.yml');
+      const yaml = parse(buffer.toString());
 
-    const contribServices = [
-      Uri.file(join(workspacePath, 'web/core/core.services.yml')),
-      ...(await workspace.findFiles('web/core/modules/*/*.services.yml')),
-      ...(await workspace.findFiles('web/modules/contrib/*/*.services.yml')),
-    ];
+      if ('services' in yaml) {
+        for (const name in yaml.services) {
+          const completion: CompletionItem = {
+            label: `${moduleName}.${name}`,
+            kind: CompletionItemKind.Class,
+            detail: `Service`,
+          };
 
-    for (const file of contribServices) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          this.contribServices.push(...completions);
+          completions.push(completion);
         }
-      } catch (e) {
-        console.error(e);
+
+        this.completionFileCache.set(uri.fsPath, completions);
       }
     }
 
-    const customServices = [
-      ...(await workspace.findFiles('web/modules/custom/*/*.services.yml')),
-    ];
-
-    for (const file of customServices) {
-      try {
-        await access(file.fsPath, constants.R_OK);
-        const completions = await this.getFileCompletions(file);
-
-        if (completions.length) {
-          this.customServices.push(...completions);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    this.completions = ([] as CompletionItem[]).concat(
+      ...this.completionFileCache.values()
+    );
   }
 
   async provideCompletionItems(document: TextDocument, position: Position) {
-    if (
-      typeof document === 'undefined' ||
-      document.languageId !== ServicesCompletionProvider.language
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return [];
     }
 
@@ -87,35 +88,10 @@ export default class ServicesCompletionProvider extends Provider {
       .lineAt(position)
       .text.substring(0, position.character);
 
-    if (!prefixes.some(item => linePrefix.includes(item))) {
+    if (!prefixes.some((item) => linePrefix.includes(item))) {
       return [];
     }
 
-    if (this.customServices.length) {
-      return this.contribServices.concat(this.customServices);
-    } else {
-      return this.contribServices;
-    }
-  }
-
-  async getFileCompletions(filePath: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const text = await readFile(filePath.fsPath, 'utf8');
-    const moduleName = basename(filePath.path, '.services.yml');
-    const yaml = parse(text);
-
-    if ('services' in yaml) {
-      for (const name in yaml.services) {
-        const completion: CompletionItem = {
-          label: `${moduleName}.${name}`,
-          kind: CompletionItemKind.Class,
-          detail: `Service`,
-        };
-
-        completions.push(completion);
-      }
-    }
-
-    return completions;
+    return this.completions;
   }
 }

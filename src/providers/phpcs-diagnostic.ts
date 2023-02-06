@@ -2,8 +2,6 @@ import { spawn } from 'child_process';
 import {
   Diagnostic,
   DiagnosticSeverity,
-  DiagnosticCollection,
-  ExtensionContext,
   languages,
   window,
   TextDocument,
@@ -12,12 +10,12 @@ import {
   Position,
 } from 'vscode';
 import { extname, join } from 'path';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 
-const LINTER_MESSAGE_TYPE = <const>{
+const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
   WARNING: DiagnosticSeverity.Warning,
-};
+} as const;
 
 type LinterMessageTypeValue = keyof typeof LINTER_MESSAGE_TYPE;
 
@@ -31,34 +29,40 @@ interface LinterMessage {
   column: number;
 }
 
-export default class PHPCSDiagnosticProvider extends Provider {
-  collection: DiagnosticCollection;
+export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
+  collection = languages.createDiagnosticCollection();
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
-    this.collection = languages.createDiagnosticCollection();
     this.disposables.push(this.collection);
 
     if (window.activeTextEditor) {
       this.validate(window.activeTextEditor.document);
     }
 
-    context.subscriptions.push(
-      window.onDidChangeActiveTextEditor((editor) => {
+    window.onDidChangeActiveTextEditor(
+      (editor) => {
         if (editor) {
           this.validate(editor.document);
         }
-      }),
-      workspace.onDidChangeTextDocument((e) => this.validate(e.document))
+      },
+      this,
+      this.disposables
+    );
+
+    workspace.onDidChangeTextDocument(
+      (e) => this.validate(e.document),
+      this,
+      this.disposables
     );
   }
 
-  get name() {
-    return 'phpcs';
-  }
-
   async validate(document: TextDocument) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
+      return;
+    }
+
     const config = this.config;
 
     if (!config.get('enabled')) {
@@ -72,19 +76,13 @@ export default class PHPCSDiagnosticProvider extends Provider {
       return;
     }
 
-    const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-
-    if (!workspaceFolder) {
-      return;
-    }
-
     const filePath = document.uri.path;
     const spawnOptions = {
       encoding: 'utf8',
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(workspaceFolder.uri.fsPath, executablePath),
+      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
       ...config.get('args', []),
       '-q',
       '--report=json',
@@ -126,5 +124,9 @@ export default class PHPCSDiagnosticProvider extends Provider {
     process.stderr.on('data', (data) => {
       console.error(`stderr: ${data}`);
     });
+  }
+
+  get name() {
+    return 'phpcs';
   }
 }

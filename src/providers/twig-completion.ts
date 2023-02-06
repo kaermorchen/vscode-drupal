@@ -1,20 +1,19 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItemKind,
   TextDocument,
   Position,
   workspace,
   SnippetString,
-  CancellationToken,
+  CompletionItemProvider,
+  Uri,
+  languages,
 } from 'vscode';
-import { join } from 'path';
-import { constants } from 'fs';
 import { Class as ASTClass, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
-import Provider from './provider';
+import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
-import { CompletionItemWithCallback } from '../types/global';
+import { CompletionItemWithCallback } from '../types';
 
 const astFileCache = new Map<string, ASTClass>();
 
@@ -132,75 +131,73 @@ const twigFilters: CompletionItemWithCallback[] = [
   })
 );
 
-export default class TwigCompletionProvider extends Provider {
+const twigAll = twigFunctions.concat(twigFilters);
+
+export default class TwigCompletionProvider
+  extends DrupalWorkspaceProvider
+  implements CompletionItemProvider
+{
   static language = 'twig';
 
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
+
+    this.disposables.push(
+      languages.registerCompletionItemProvider(
+        {
+          language: TwigCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
+        this
+      )
+    );
+  }
+
   provideCompletionItems(document: TextDocument, position: Position) {
-    if (
-      typeof document === 'undefined' ||
-      document.languageId !== TwigCompletionProvider.language
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return [];
     }
 
-    let apiCompletion = [...twigFunctions];
     const linePrefix = document
       .lineAt(position)
       .text.substring(0, position.character);
 
     if (/\|\s*/.test(linePrefix)) {
-      apiCompletion = apiCompletion.concat(twigFilters);
+      return twigAll;
+    } else {
+      return twigFunctions;
     }
-
-    return apiCompletion;
   }
 
-  resolveCompletionItem = async (
+  async resolveCompletionItem(
     item: CompletionItemWithCallback
-  ): Promise<CompletionItemWithCallback> => {
-    const workspacePath = await this.getWorkspacePath();
-
-    if (!workspacePath) {
-      return item;
-    }
-
+  ): Promise<CompletionItemWithCallback> {
     const [namespace, fnName] = item.callback.split('::');
-    const parts = namespace.split('\\');
-    const file = `${join(workspacePath, 'web', 'core', 'lib', ...parts)}.php`;
+    const parts = namespace.concat('.php').split('\\');
+    const uri = Uri.joinPath(
+      this.drupalWorkspace.workspaceFolder.uri,
+      'web',
+      'core',
+      'lib',
+      ...parts
+    );
+    const docblock = await this.getDocblock(uri, fnName);
 
-    try {
-      await access(file, constants.R_OK);
-
-      const docblock = await this.getDocblock(file, fnName);
-
-      if (docblock) {
-        item.documentation = docblock;
-      }
-    } catch {}
+    if (docblock) {
+      item.documentation = docblock;
+    }
 
     return item;
-  };
-
-  async getWorkspacePath(): Promise<string | undefined> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    if (typeof workspaceFolders === 'undefined') {
-      return;
-    }
-
-    // TODO: which workspaces is current?
-    return workspaceFolders[0].uri.path;
   }
 
-  async getDocblock(
-    filePath: string,
-    fnName: string
-  ): Promise<string | undefined> {
+  async getDocblock(uri: Uri, fnName: string): Promise<string | undefined> {
+    const filePath = uri.fsPath;
     let astClass = astFileCache.get(filePath);
 
     if (!astClass) {
-      const text = await readFile(filePath, 'utf8');
-      const tree = phpParser.parseCode(text, filePath);
+      const buffer = await workspace.fs.readFile(uri);
+      const tree = phpParser.parseCode(buffer.toString(), filePath);
 
       astClass = (tree.children[0] as Namespace).children.pop() as ASTClass;
       astFileCache.set(filePath, astClass);

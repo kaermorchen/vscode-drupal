@@ -1,93 +1,87 @@
-import { readFile, access } from 'fs/promises';
 import {
   CompletionItem,
   CompletionItemKind,
-  ExtensionContext,
+  CompletionItemProvider,
+  languages,
   MarkdownString,
-  TextDocument,
+  Uri,
+  workspace,
 } from 'vscode';
 import { Global } from 'php-parser';
-import { join } from 'path';
-import { constants } from 'fs';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import Provider from './provider';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
-export default class GlobalVariablesCompletionProvider extends Provider {
+export default class GlobalVariablesCompletionProvider
+  extends DrupalWorkspaceProviderWithWatcher
+  implements CompletionItemProvider
+{
   static language = 'php';
 
-  apiCompletion: CompletionItem[] = [];
+  completions: CompletionItem[] = [];
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
+    super(arg);
 
-    this.parseApiFiles();
+    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+
+    this.disposables.push(
+      languages.registerCompletionItemProvider(
+        {
+          language: GlobalVariablesCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
+        this
+      )
+    );
+
+    this.parseFiles();
   }
 
-  async parseApiFiles() {
-    const workspacePath = await this.getWorkspacePath();
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
-    if (!workspacePath) {
-      return;
-    }
+    this.completions = [];
 
-    const apiFiles = [join(workspacePath, 'web/core/globals.api.php')];
+    for (const uri of uris) {
+      const buffer = await workspace.fs.readFile(uri);
+      const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
 
-    for (const file of apiFiles) {
-      try {
-        await access(file, constants.R_OK);
-        this.apiCompletion = await this.getFileCompletions(file);
-      } catch (e) {
-        console.error(e);
+      for (const item of tree.children) {
+        if (item.kind !== 'global') {
+          continue;
+        }
+
+        const variable = (item as Global).items[0];
+
+        if (typeof variable.name !== 'string') {
+          continue;
+        }
+
+        const name = variable.name;
+        const completion: CompletionItem = {
+          label: `$${name}`,
+          kind: CompletionItemKind.Variable,
+          detail: 'global variable',
+        };
+
+        const lastComment = item.leadingComments?.pop();
+
+        if (lastComment) {
+          const ast = docParser.parse(lastComment.value);
+
+          completion.documentation = new MarkdownString(ast.summary);
+        }
+
+        this.completions.push(completion);
       }
     }
   }
 
-  async provideCompletionItems(document: TextDocument) {
-    if (
-      typeof document === 'undefined' ||
-      document.languageId !== GlobalVariablesCompletionProvider.language
-    ) {
-      return [];
-    }
-
-    return this.apiCompletion;
-  }
-
-  async getFileCompletions(filePath: string): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const text = await readFile(filePath, 'utf8');
-    const tree = phpParser.parseCode(text, filePath);
-
-    for (const item of tree.children) {
-      if (item.kind !== 'global') {
-        continue;
-      }
-
-      const variable = (item as Global).items[0];
-
-      if (typeof variable.name !== 'string') {
-        continue;
-      }
-
-      const name = variable.name;
-      const completion: CompletionItem = {
-        label: `$${name}`,
-        kind: CompletionItemKind.Variable,
-        detail: 'global variable'
-      };
-
-      const lastComment = item.leadingComments?.pop();
-
-      if (lastComment) {
-        const ast = docParser.parse(lastComment.value);
-
-        completion.documentation = new MarkdownString(ast.summary);
-      }
-
-      completions.push(completion);
-    }
-
-    return completions;
+  async provideCompletionItems() {
+    return this.completions;
   }
 }
