@@ -1,16 +1,20 @@
 import Disposable from './disposable';
-import { FileSystemWatcher, workspace, WorkspaceConfiguration } from 'vscode';
+import {
+  FileSystemWatcher,
+  RelativePattern,
+  workspace,
+  WorkspaceConfiguration,
+} from 'vscode';
 import DrupalWorkspace from './drupal-workspace';
 
 export default class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;
   watcher: FileSystemWatcher;
-  pattern: string;
+  pattern: RelativePattern;
 
   constructor(arg: {
     drupalWorkspace: DrupalWorkspace;
-    pattern: string;
-    disposables?: Disposable[];
+    pattern: RelativePattern;
     watcher?: FileSystemWatcher;
   }) {
     super();
@@ -21,16 +25,8 @@ export default class DrupalWorkspaceProvider extends Disposable {
     if (arg.watcher) {
       this.watcher = arg.watcher;
     } else {
-      this.watcher = workspace.createFileSystemWatcher(
-        this.drupalWorkspace.getRelativePattern(this.pattern)
-      );
+      this.watcher = workspace.createFileSystemWatcher(this.pattern);
       this.disposables.push(this.watcher);
-    }
-
-    if (arg.disposables) {
-      arg.disposables.push(this);
-    } else {
-      this.drupalWorkspace.disposables.push(this);
     }
   }
 

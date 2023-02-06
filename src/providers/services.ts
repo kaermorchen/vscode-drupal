@@ -34,7 +34,11 @@ export default class ServicesCompletionProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        ServicesCompletionProvider.language,
+        {
+          language: ServicesCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
         this,
         '"',
         "'"

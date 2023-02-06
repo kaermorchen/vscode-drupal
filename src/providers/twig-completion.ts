@@ -144,7 +144,11 @@ export default class TwigCompletionProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        TwigCompletionProvider.language,
+        {
+          language: TwigCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
         this
       )
     );
