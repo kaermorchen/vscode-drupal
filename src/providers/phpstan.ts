@@ -68,7 +68,6 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
       ...config.get('args', []),
       '--no-progress',
       '--error-format=json',
@@ -77,7 +76,11 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
     ];
 
     // TODO: add abort signal
-    const process = spawn('php', args, spawnOptions);
+    const process = spawn(
+      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
+      args,
+      spawnOptions
+    );
 
     process.stdout.on('data', (data) => {
       const json = JSON.parse(data.toString());

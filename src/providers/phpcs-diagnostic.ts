@@ -82,7 +82,6 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
       ...config.get('args', []),
       '-q',
       '--report=json',
@@ -92,7 +91,11 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
     ];
 
     // TODO: add abort signal
-    const process = spawn('php', args, spawnOptions);
+    const process = spawn(
+      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
+      args,
+      spawnOptions
+    );
 
     process.stdin.write(document.getText());
     process.stdin.end();

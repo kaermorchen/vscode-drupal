@@ -58,7 +58,6 @@ export default class PHPCBFDocumentFormattingProvider
         timeout: 1000 * 60 * 1, // 1 minute
       };
       const args = [
-        join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
         ...config.get('args', []),
         '-q',
         `--stdin-path=${filePath}`,
@@ -67,7 +66,11 @@ export default class PHPCBFDocumentFormattingProvider
       ];
 
       // TODO: add abort signal
-      const process = spawn('php', args, spawnOptions);
+      const process = spawn(
+        join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
+        args,
+        spawnOptions
+      );
       const originalText = document.getText();
 
       process.stdin.write(originalText);
