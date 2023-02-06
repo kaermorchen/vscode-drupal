@@ -1,4 +1,5 @@
 import {
+  FileSystemWatcher,
   GlobPattern,
   RelativePattern,
   Uri,
@@ -15,9 +16,12 @@ import RoutingCompletionProvider from '../providers/routing';
 import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import { Tail } from '../types';
+import getComposerLock from '../utils/get-composer-lock';
 
 export default class DrupalWorkspace extends Disposable {
   workspaceFolder: WorkspaceFolder;
+  private drupalVersion?: number;
+  private composerLockWatcher: FileSystemWatcher;
 
   constructor(workspaceFolder: WorkspaceFolder) {
     super();
@@ -60,6 +64,18 @@ export default class DrupalWorkspace extends Disposable {
         drupalWorkspace: this,
       })
     );
+
+    this.composerLockWatcher = workspace.createFileSystemWatcher(
+      this.getRelativePattern('composer.lock')
+    );
+    this.disposables.push(this.composerLockWatcher);
+    this.composerLockWatcher.onDidChange(
+      () => {
+        this.drupalVersion = undefined;
+      },
+      this,
+      this.disposables
+    );
   }
 
   hasFile(uri: Uri) {
@@ -81,5 +97,26 @@ export default class DrupalWorkspace extends Disposable {
     ...args: Tail<Parameters<typeof workspace['findFiles']>>
   ) {
     return workspace.findFiles(include, ...args);
+  }
+
+  async getDrupalVersion(): Promise<number | undefined> {
+    if (this.drupalVersion) {
+      return this.drupalVersion;
+    }
+
+    const lock = await getComposerLock(this.workspaceFolder);
+
+    if (!lock) {
+      return;
+    }
+
+    for (const item of lock.packages) {
+      if (item.name === 'drupal/core') {
+        this.drupalVersion = parseInt(item.version);
+        break;
+      }
+    }
+
+    return this.drupalVersion;
   }
 }

@@ -3,22 +3,17 @@ import ShowOutputChannel from './commands/show-output-channel';
 import DrupalStatusBar from './base/drupal-status-bar';
 import DrupalWorkspace from './base/drupal-workspace';
 import getWorkspaceFolders from './utils/get-workspace-folders';
+import getComposer from './utils/get-composer';
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
 
   for (const workspaceFolder of getWorkspaceFolders()) {
-    const include = new RelativePattern(workspaceFolder, 'composer.json');
-    const composerUri = await workspace.findFiles(include, undefined, 1);
+    const composer = await getComposer(workspaceFolder);
 
-    if (composerUri.length === 0) {
+    if (!composer) {
       continue;
     }
-
-    const composer = await workspace.fs
-      .readFile(composerUri[0])
-      .then((value) => value.toString())
-      .then((value) => JSON.parse(value));
 
     if ('drupal/core-recommended' in composer.require) {
       drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
