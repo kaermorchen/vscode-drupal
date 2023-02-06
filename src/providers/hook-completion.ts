@@ -13,15 +13,15 @@ import { Function as ASTFunction } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
 } as const;
 
 export default class HookCompletionProvider
-  extends DrupalWorkspaceProvider
+  extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
   static language = 'php';
@@ -29,7 +29,9 @@ export default class HookCompletionProvider
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+  constructor(
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+  ) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);

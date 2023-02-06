@@ -49,19 +49,15 @@ export default class DrupalWorkspace extends Disposable {
       }),
       new TwigCompletionProvider({
         drupalWorkspace: this,
-        pattern: this.getRelativePattern('*'),
       }),
       new PHPCBFDocumentFormattingProvider({
         drupalWorkspace: this,
-        pattern: this.getRelativePattern('**'),
       }),
       new PHPCSDiagnosticProvider({
         drupalWorkspace: this,
-        pattern: this.getRelativePattern('*'),
       }),
       new PHPStanDiagnosticProvider({
         drupalWorkspace: this,
-        pattern: this.getRelativePattern('*'),
       })
     );
   }
