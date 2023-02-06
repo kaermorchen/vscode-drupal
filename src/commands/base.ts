@@ -1,5 +1,5 @@
 import { commands } from "vscode";
-import Disposable from "../providers/disposable";
+import Disposable from "../base/disposable";
 
 export default class BaseCommand extends Disposable {
   static id: string;

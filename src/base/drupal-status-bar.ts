@@ -1,17 +1,12 @@
-import {
-  ExtensionContext,
-  StatusBarAlignment,
-  StatusBarItem,
-  window,
-} from 'vscode';
+import { StatusBarAlignment, StatusBarItem, window } from 'vscode';
 import ShowOutputChannel from '../commands/show-output-channel';
-import Context from './context';
+import Disposable from './disposable';
 
-export default class DrupalStatusBar extends Context {
+export default class DrupalStatusBar extends Disposable {
   statusBarItem: StatusBarItem;
 
-  constructor(context: ExtensionContext) {
-    super(context);
+  constructor() {
+    super();
 
     this.statusBarItem = window.createStatusBarItem(
       'drupal',

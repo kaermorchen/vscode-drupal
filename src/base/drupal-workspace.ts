@@ -1,10 +1,10 @@
 import {
-  ExtensionContext,
   RelativePattern,
   Uri,
   workspace,
   WorkspaceFolder,
 } from 'vscode';
+import Disposable from './disposable';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
 import HookCompletionProvider from '../providers/hook-completion';
 import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
@@ -14,59 +14,52 @@ import RoutingCompletionProvider from '../providers/routing';
 import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import { Tail } from '../types';
-import Context from './context';
 
-export default class DrupalWorkspace extends Context {
+export default class DrupalWorkspace extends Disposable {
   workspaceFolder: WorkspaceFolder;
-  globalVariables: GlobalVariablesCompletionProvider;
-  routingCompletionProvider: RoutingCompletionProvider;
-  hookCompletionProvider: HookCompletionProvider;
-  servicesCompletionProvider: ServicesCompletionProvider;
-  phpcbf: PHPCBFDocumentFormattingProvider;
-  phpcs: PHPCSDiagnosticProvider;
-  phpstan: PHPStanDiagnosticProvider;
-  twig: TwigCompletionProvider;
 
-  constructor(context: ExtensionContext, workspaceFolder: WorkspaceFolder) {
-    super(context);
+  constructor(workspaceFolder: WorkspaceFolder) {
+    super();
 
     this.workspaceFolder = workspaceFolder;
 
-    this.globalVariables = new GlobalVariablesCompletionProvider({
-      drupalWorkspace: this,
-      pattern: 'web/core/globals.api.php',
-    });
-    this.routingCompletionProvider = new RoutingCompletionProvider({
-      drupalWorkspace: this,
-      pattern:
-        'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml',
-    });
-    this.hookCompletionProvider = new HookCompletionProvider({
-      drupalWorkspace: this,
-      pattern:
-        'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.api.php',
-    });
-    this.servicesCompletionProvider = new ServicesCompletionProvider({
-      drupalWorkspace: this,
-      pattern:
-        'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml',
-    });
-    this.twig = new TwigCompletionProvider({
-      drupalWorkspace: this,
-      pattern: '*',
-    });
-    this.phpcbf = new PHPCBFDocumentFormattingProvider({
-      drupalWorkspace: this,
-      pattern: '**',
-    });
-    this.phpcs = new PHPCSDiagnosticProvider({
-      drupalWorkspace: this,
-      pattern: '*',
-    });
-    this.phpstan = new PHPStanDiagnosticProvider({
-      drupalWorkspace: this,
-      pattern: '*',
-    });
+    this.disposables.push(
+      new GlobalVariablesCompletionProvider({
+        drupalWorkspace: this,
+        pattern: 'web/core/globals.api.php',
+      }),
+      new RoutingCompletionProvider({
+        drupalWorkspace: this,
+        pattern:
+          'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml',
+      }),
+      new HookCompletionProvider({
+        drupalWorkspace: this,
+        pattern:
+          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.api.php',
+      }),
+      new ServicesCompletionProvider({
+        drupalWorkspace: this,
+        pattern:
+          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml',
+      }),
+      new TwigCompletionProvider({
+        drupalWorkspace: this,
+        pattern: '*',
+      }),
+      new PHPCBFDocumentFormattingProvider({
+        drupalWorkspace: this,
+        pattern: '**',
+      }),
+      new PHPCSDiagnosticProvider({
+        drupalWorkspace: this,
+        pattern: '*',
+      }),
+      new PHPStanDiagnosticProvider({
+        drupalWorkspace: this,
+        pattern: '*',
+      })
+    );
   }
 
   hasFile(uri: Uri) {
