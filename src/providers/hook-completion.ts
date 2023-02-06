@@ -36,7 +36,11 @@ export default class HookCompletionProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        HookCompletionProvider.language,
+        {
+          language: HookCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
         this
       )
     );
@@ -107,10 +111,6 @@ export default class HookCompletionProvider
   }
 
   async provideCompletionItems(document: TextDocument) {
-    if (!this.drupalWorkspace.hasFile(document.uri)) {
-      return [];
-    }
-
     const machineName = await getModuleMachineName(document.uri.path);
 
     if (!machineName) {

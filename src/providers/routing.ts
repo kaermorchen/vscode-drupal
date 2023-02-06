@@ -27,7 +27,11 @@ export default class RoutingCompletionProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        RoutingCompletionProvider.language,
+        {
+          language: RoutingCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
         this,
         '"',
         "'"

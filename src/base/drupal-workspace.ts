@@ -1,4 +1,5 @@
 import {
+  GlobPattern,
   RelativePattern,
   Uri,
   workspace,
@@ -26,38 +27,41 @@ export default class DrupalWorkspace extends Disposable {
     this.disposables.push(
       new GlobalVariablesCompletionProvider({
         drupalWorkspace: this,
-        pattern: 'web/core/globals.api.php',
+        pattern: this.getRelativePattern('web/core/globals.api.php'),
       }),
       new RoutingCompletionProvider({
         drupalWorkspace: this,
-        pattern:
-          'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml',
+        pattern: this.getRelativePattern(
+          'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml'
+        ),
       }),
       new HookCompletionProvider({
         drupalWorkspace: this,
-        pattern:
-          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.api.php',
+        pattern: this.getRelativePattern(
+          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.api.php'
+        ),
       }),
       new ServicesCompletionProvider({
         drupalWorkspace: this,
-        pattern:
-          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml',
+        pattern: this.getRelativePattern(
+          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml'
+        ),
       }),
       new TwigCompletionProvider({
         drupalWorkspace: this,
-        pattern: '*',
+        pattern: this.getRelativePattern('*'),
       }),
       new PHPCBFDocumentFormattingProvider({
         drupalWorkspace: this,
-        pattern: '**',
+        pattern: this.getRelativePattern('**'),
       }),
       new PHPCSDiagnosticProvider({
         drupalWorkspace: this,
-        pattern: '*',
+        pattern: this.getRelativePattern('*'),
       }),
       new PHPStanDiagnosticProvider({
         drupalWorkspace: this,
-        pattern: '*',
+        pattern: this.getRelativePattern('*'),
       })
     );
   }
@@ -70,23 +74,16 @@ export default class DrupalWorkspace extends Disposable {
     return new RelativePattern(this.workspaceFolder, include);
   }
 
-  async findFile(include: string): Promise<Uri | undefined> {
-    const result = await workspace.findFiles(
-      new RelativePattern(this.workspaceFolder, include),
-      undefined,
-      1
-    );
+  async findFile(include: GlobPattern): Promise<Uri | undefined> {
+    const result = await workspace.findFiles(include, undefined, 1);
 
     return result.length ? result[0] : undefined;
   }
 
   async findFiles(
-    include: string,
+    include: GlobPattern,
     ...args: Tail<Parameters<typeof workspace['findFiles']>>
   ) {
-    return workspace.findFiles(
-      new RelativePattern(this.workspaceFolder, include),
-      ...args
-    );
+    return workspace.findFiles(include, ...args);
   }
 }

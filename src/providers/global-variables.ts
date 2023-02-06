@@ -4,7 +4,6 @@ import {
   CompletionItemProvider,
   languages,
   MarkdownString,
-  TextDocument,
   Uri,
   workspace,
 } from 'vscode';
@@ -19,7 +18,7 @@ export default class GlobalVariablesCompletionProvider
 {
   static language = 'php';
 
-  completion: CompletionItem[] = [];
+  completions: CompletionItem[] = [];
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
@@ -28,7 +27,11 @@ export default class GlobalVariablesCompletionProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        GlobalVariablesCompletionProvider.language,
+        {
+          language: GlobalVariablesCompletionProvider.language,
+          scheme: 'file',
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
+        },
         this
       )
     );
@@ -36,55 +39,49 @@ export default class GlobalVariablesCompletionProvider
     this.parseFiles();
   }
 
-  async parseFiles() {
-    const result = await this.drupalWorkspace.findFile(this.pattern);
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
-    if (result) {
-      this.completion = await this.getFileCompletions(result);
+    this.completions = [];
+
+    for (const uri of uris) {
+      const buffer = await workspace.fs.readFile(uri);
+      const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
+
+      for (const item of tree.children) {
+        if (item.kind !== 'global') {
+          continue;
+        }
+
+        const variable = (item as Global).items[0];
+
+        if (typeof variable.name !== 'string') {
+          continue;
+        }
+
+        const name = variable.name;
+        const completion: CompletionItem = {
+          label: `$${name}`,
+          kind: CompletionItemKind.Variable,
+          detail: 'global variable',
+        };
+
+        const lastComment = item.leadingComments?.pop();
+
+        if (lastComment) {
+          const ast = docParser.parse(lastComment.value);
+
+          completion.documentation = new MarkdownString(ast.summary);
+        }
+
+        this.completions.push(completion);
+      }
     }
   }
 
-  async provideCompletionItems(document: TextDocument) {
-    return this.drupalWorkspace.workspaceFolder ===
-      workspace.getWorkspaceFolder(document.uri)
-      ? this.completion
-      : [];
-  }
-
-  async getFileCompletions(uri: Uri): Promise<CompletionItem[]> {
-    const completions: CompletionItem[] = [];
-    const buffer = await workspace.fs.readFile(uri);
-    const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
-
-    for (const item of tree.children) {
-      if (item.kind !== 'global') {
-        continue;
-      }
-
-      const variable = (item as Global).items[0];
-
-      if (typeof variable.name !== 'string') {
-        continue;
-      }
-
-      const name = variable.name;
-      const completion: CompletionItem = {
-        label: `$${name}`,
-        kind: CompletionItemKind.Variable,
-        detail: 'global variable',
-      };
-
-      const lastComment = item.leadingComments?.pop();
-
-      if (lastComment) {
-        const ast = docParser.parse(lastComment.value);
-
-        completion.documentation = new MarkdownString(ast.summary);
-      }
-
-      completions.push(completion);
-    }
-
-    return completions;
+  async provideCompletionItems() {
+    return this.completions;
   }
 }
