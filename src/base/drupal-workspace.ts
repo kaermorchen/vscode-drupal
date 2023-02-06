@@ -1,8 +1,5 @@
-import { dirname } from 'path';
 import {
   ExtensionContext,
-  FileSystemWatcher,
-  FileType,
   RelativePattern,
   Uri,
   workspace,
@@ -18,10 +15,8 @@ import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import { Tail } from '../types';
 import Context from './context';
-import DrupalModule from './drupal-module';
 
 export default class DrupalWorkspace extends Context {
-  customModules: DrupalModule[] = [];
   workspaceFolder: WorkspaceFolder;
   globalVariables: GlobalVariablesCompletionProvider;
   routingCompletionProvider: RoutingCompletionProvider;
@@ -68,12 +63,10 @@ export default class DrupalWorkspace extends Context {
       drupalWorkspace: this,
       pattern: '*',
     });
-
     this.phpstan = new PHPStanDiagnosticProvider({
       drupalWorkspace: this,
       pattern: '*',
     });
-
   }
 
   hasFile(uri: Uri) {
@@ -103,30 +96,4 @@ export default class DrupalWorkspace extends Context {
       ...args
     );
   }
-
-  // async initDrupalModules() {
-  //   const customModulesDir = 'web/modules/custom';
-  //   const moduleDirectory = Uri.joinPath(
-  //     this.workspaceFolder.uri,
-  //     customModulesDir
-  //   );
-  //   const result = await workspace.fs.readDirectory(moduleDirectory);
-
-  //   for (const [name, fileType] of result) {
-  //     if (fileType === FileType.Directory) {
-  //       const uri = Uri.joinPath(
-  //         this.workspaceFolder.uri,
-  //         customModulesDir,
-  //         name
-  //       );
-  //       this.customModules.push(
-  //         new DrupalModule({
-  //           drupalWorkspace: this,
-  //           context: this.context,
-  //           uri,
-  //         })
-  //       );
-  //     }
-  //   }
-  // }
 }
