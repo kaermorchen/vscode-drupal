@@ -1,7 +1,6 @@
-import Disposable from '../providers/disposable';
+import Disposable from './disposable';
 import { FileSystemWatcher, workspace, WorkspaceConfiguration } from 'vscode';
 import DrupalWorkspace from './drupal-workspace';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;

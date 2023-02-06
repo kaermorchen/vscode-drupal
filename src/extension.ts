@@ -38,7 +38,7 @@ export async function activate(context: ExtensionContext) {
       .then((value) => JSON.parse(value));
 
     if ('drupal/core-recommended' in composer.require) {
-      drupalWorkspaces.push(new DrupalWorkspace(context, workspaceFolder));
+      drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
     }
   }
 
@@ -48,7 +48,9 @@ export async function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     ...drupalWorkspaces,
-    new DrupalStatusBar(context),
+
+    // Common
+    new DrupalStatusBar(),
 
     // Commands
     new ShowOutputChannel()
