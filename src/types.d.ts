@@ -1,5 +1,4 @@
-import { CompletionItem, Disposable, FileSystemWatcher } from 'vscode';
-import DrupalWorkspace from './base/drupal-workspace';
+import { CompletionItem } from 'vscode';
 
 declare module 'doc-parser' {
   interface Doc {
