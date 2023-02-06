@@ -15,6 +15,8 @@ import PHPStanDiagnosticProvider from './providers/phpstan';
 import RoutingCompletionProvider from './providers/routing';
 import ServicesCompletionProvider from './providers/services';
 import TwigCompletionProvider from './providers/twig-completion';
+import { ExtensionContext, RelativePattern, workspace } from 'vscode';
+import ShowOutputChannel from './commands/show-output-channel';
 import DrupalStatusBar from './base/drupal-status-bar';
 import DrupalWorkspace from './base/drupal-workspace';
 import getWorkspaceFolders from './utils/get-workspace-folders';

@@ -21,7 +21,7 @@ declare module 'doc-parser' {
   }
 }
 
-interface CompletionItemWithCallback extends CompletionItem {
+export interface CompletionItemWithCallback extends CompletionItem {
   callback: string;
 }
 
@@ -31,3 +31,7 @@ export interface DrupalWorkspaceProviderConstructorArguments {
   disposables?: Disposable[];
   watcher?: FileSystemWatcher;
 }
+
+export type Tail<T extends any[]> = T extends [head: any, ...tail: infer Tail_]
+  ? Tail_
+  : never;

@@ -13,10 +13,7 @@ import phpParser from '../utils/php-parser';
 import docParser from '../utils/doc-parser';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
-import {
-  CompletionItemWithCallback,
-  DrupalWorkspaceProviderConstructorArguments,
-} from '../types';
+import { CompletionItemWithCallback } from '../types';
 
 const astFileCache = new Map<string, ASTClass>();
 
@@ -142,8 +139,8 @@ export default class TwigCompletionProvider
 {
   static language = 'twig';
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -154,11 +151,8 @@ export default class TwigCompletionProvider
   }
 
   provideCompletionItems(document: TextDocument, position: Position) {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
-      return;
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
+      return [];
     }
 
     const linePrefix = document

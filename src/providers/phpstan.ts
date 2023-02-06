@@ -11,7 +11,6 @@ import {
 } from 'vscode';
 import { join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 interface Message {
   message: string;
@@ -22,8 +21,8 @@ interface Message {
 export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.disposables.push(this.collection);
 
@@ -45,10 +44,7 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
   }
 
   async validate(document: TextDocument) {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return;
     }
 

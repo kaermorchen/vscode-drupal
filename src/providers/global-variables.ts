@@ -12,7 +12,6 @@ import { Global } from 'php-parser';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class GlobalVariablesCompletionProvider
   extends DrupalWorkspaceProvider
@@ -22,8 +21,8 @@ export default class GlobalVariablesCompletionProvider
 
   completion: CompletionItem[] = [];
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
