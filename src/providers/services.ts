@@ -9,8 +9,8 @@ import {
   workspace,
 } from 'vscode';
 import { basename } from 'path';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import { parse } from 'yaml';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
 const prefixes = [
   'Drupal::service(',
@@ -19,7 +19,7 @@ const prefixes = [
 ];
 
 export default class ServicesCompletionProvider
-  extends DrupalWorkspaceProvider
+  extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
   static language = 'php';
@@ -27,7 +27,7 @@ export default class ServicesCompletionProvider
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);

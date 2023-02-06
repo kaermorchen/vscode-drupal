@@ -9,25 +9,11 @@ import DrupalWorkspace from './drupal-workspace';
 
 export default class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;
-  watcher: FileSystemWatcher;
-  pattern: RelativePattern;
 
-  constructor(arg: {
-    drupalWorkspace: DrupalWorkspace;
-    pattern: RelativePattern;
-    watcher?: FileSystemWatcher;
-  }) {
+  constructor(arg: { drupalWorkspace: DrupalWorkspace }) {
     super();
 
     this.drupalWorkspace = arg.drupalWorkspace;
-    this.pattern = arg.pattern;
-
-    if (arg.watcher) {
-      this.watcher = arg.watcher;
-    } else {
-      this.watcher = workspace.createFileSystemWatcher(this.pattern);
-      this.disposables.push(this.watcher);
-    }
   }
 
   get name(): string {

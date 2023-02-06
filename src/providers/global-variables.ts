@@ -10,17 +10,17 @@ import {
 import { Global } from 'php-parser';
 import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
 export default class GlobalVariablesCompletionProvider
-  extends DrupalWorkspaceProvider
+  extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
   static language = 'php';
 
   completions: CompletionItem[] = [];
 
-  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
