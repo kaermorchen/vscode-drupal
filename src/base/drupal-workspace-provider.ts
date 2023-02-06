@@ -8,14 +8,19 @@ export default class DrupalWorkspaceProvider extends Disposable {
   watcher: FileSystemWatcher;
   pattern: string;
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
+  constructor(arg: {
+    drupalWorkspace: DrupalWorkspace;
+    pattern: string;
+    disposables?: Disposable[];
+    watcher?: FileSystemWatcher;
+  }) {
     super();
 
-    this.drupalWorkspace = args.drupalWorkspace;
-    this.pattern = args.pattern;
+    this.drupalWorkspace = arg.drupalWorkspace;
+    this.pattern = arg.pattern;
 
-    if (args.watcher) {
-      this.watcher = args.watcher;
+    if (arg.watcher) {
+      this.watcher = arg.watcher;
     } else {
       this.watcher = workspace.createFileSystemWatcher(
         this.drupalWorkspace.getRelativePattern(this.pattern)
@@ -23,8 +28,8 @@ export default class DrupalWorkspaceProvider extends Disposable {
       this.disposables.push(this.watcher);
     }
 
-    if (args.disposables) {
-      args.disposables.push(this);
+    if (arg.disposables) {
+      arg.disposables.push(this);
     } else {
       this.drupalWorkspace.disposables.push(this);
     }

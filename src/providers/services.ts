@@ -11,8 +11,6 @@ import {
 import { basename } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import { parse } from 'yaml';
-import DrupalWorkspace from '../base/drupal-workspace';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const prefixes = [
   'Drupal::service(',
@@ -27,9 +25,10 @@ export default class ServicesCompletionProvider
   static language = 'php';
 
   completions: CompletionItem[] = [];
+  completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
@@ -45,20 +44,39 @@ export default class ServicesCompletionProvider
     this.parseFiles();
   }
 
-  async parseFiles() {
-    const uris = await this.drupalWorkspace.findFiles(this.pattern, null);
-    this.completions = [];
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
     for (const uri of uris) {
-      await this.extractFileCompletions(uri);
+      const completions: CompletionItem[] = [];
+      const buffer = await workspace.fs.readFile(uri);
+      const moduleName = basename(uri.path, '.services.yml');
+      const yaml = parse(buffer.toString());
+
+      if ('services' in yaml) {
+        for (const name in yaml.services) {
+          const completion: CompletionItem = {
+            label: `${moduleName}.${name}`,
+            kind: CompletionItemKind.Class,
+            detail: `Service`,
+          };
+
+          completions.push(completion);
+        }
+
+        this.completionFileCache.set(uri.fsPath, completions);
+      }
     }
+
+    this.completions = ([] as CompletionItem[]).concat(
+      ...this.completionFileCache.values()
+    );
   }
 
   async provideCompletionItems(document: TextDocument, position: Position) {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return [];
     }
 
@@ -71,23 +89,5 @@ export default class ServicesCompletionProvider
     }
 
     return this.completions;
-  }
-
-  async extractFileCompletions(uri: Uri) {
-    const buffer = await workspace.fs.readFile(uri);
-    const moduleName = basename(uri.path, '.services.yml');
-    const yaml = parse(buffer.toString());
-
-    if ('services' in yaml) {
-      for (const name in yaml.services) {
-        const completion: CompletionItem = {
-          label: `${moduleName}.${name}`,
-          kind: CompletionItemKind.Class,
-          detail: `Service`,
-        };
-
-        this.completions.push(completion);
-      }
-    }
   }
 }

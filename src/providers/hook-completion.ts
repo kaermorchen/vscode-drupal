@@ -15,7 +15,6 @@ import docParser from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
@@ -30,8 +29,8 @@ export default class HookCompletionProvider
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
@@ -45,37 +44,80 @@ export default class HookCompletionProvider
     this.parseFiles();
   }
 
-  async parseFiles() {
-    const uris = await this.drupalWorkspace.findFiles(this.pattern, null);
-    this.completions = [];
+  async parseFiles(uri?: Uri) {
+    const uris = uri
+      ? [uri]
+      : await this.drupalWorkspace.findFiles(this.pattern);
 
     for (const uri of uris) {
-      await this.extractFileCompletions(uri);
+      const completions: CompletionItem[] = [];
+      const buffer = await workspace.fs.readFile(uri);
+      const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
+
+      for (const item of tree.children) {
+        if (item.kind !== 'function') {
+          continue;
+        }
+
+        const func: ASTFunction = item as ASTFunction;
+        const name = getName(func.name);
+
+        if (/^hook_/.test(name) === false) {
+          continue;
+        }
+
+        const funcCall = (item.loc?.source ?? name).replace(/\$/g, '\\$');
+        const completion: CompletionItem = {
+          label: name,
+          kind: NODE_COMPLETION_ITEM[item.kind],
+          detail: `Implements ${name}`,
+          insertText: new SnippetString(
+            `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`
+          ),
+        };
+
+        const lastComment = item.leadingComments?.pop();
+
+        if (lastComment) {
+          const args = func.arguments.map((item) =>
+            // Replace full import to last part
+            item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
+          );
+          const ast = docParser.parse(lastComment.value);
+          const value = [
+            '```php',
+            '<?php', //TODO: remove when vscode will support php syntax highlighting without this
+            `function ${name}(${args.join(', ')}) {}`,
+            '```',
+            ast.summary,
+          ].join('\n');
+
+          completion.documentation = new MarkdownString(value);
+        }
+
+        completions.push(completion);
+      }
+
+      this.completionFileCache.set(uri.fsPath, completions);
     }
+
+    this.completions = ([] as CompletionItem[]).concat(
+      ...this.completionFileCache.values()
+    );
   }
 
   async provideCompletionItems(document: TextDocument) {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return [];
     }
 
-    const filePath = document.uri.path;
-    const cache = this.completionFileCache.get(filePath);
-
-    if (cache) {
-      return cache;
-    }
-
-    const machineName = await getModuleMachineName(filePath);
+    const machineName = await getModuleMachineName(document.uri.path);
 
     if (!machineName) {
       return this.completions;
     }
 
-    const apiCompletionWithMachineName = this.completions.map((item) => {
+    return this.completions.map((item) => {
       const newItem = Object.assign({}, item);
       const searchValue = 'function hook_';
       const replaceValue = `function ${machineName}_`;
@@ -94,58 +136,5 @@ export default class HookCompletionProvider
 
       return newItem;
     });
-
-    this.completionFileCache.set(filePath, apiCompletionWithMachineName);
-
-    return apiCompletionWithMachineName;
-  }
-
-  async extractFileCompletions(uri: Uri) {
-    const buffer = await workspace.fs.readFile(uri);
-    const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
-
-    for (const item of tree.children) {
-      if (item.kind !== 'function') {
-        continue;
-      }
-
-      const func: ASTFunction = item as ASTFunction;
-      const name = getName(func.name);
-
-      if (/^hook_/.test(name) === false) {
-        continue;
-      }
-
-      const funcCall = (item.loc?.source ?? name).replace(/\$/g, '\\$');
-      const completion: CompletionItem = {
-        label: name,
-        kind: NODE_COMPLETION_ITEM[item.kind],
-        detail: `Implements ${name}`,
-        insertText: new SnippetString(
-          `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`
-        ),
-      };
-
-      const lastComment = item.leadingComments?.pop();
-
-      if (lastComment) {
-        const args = func.arguments.map((item) =>
-          // Replace full import to last part
-          item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
-        );
-        const ast = docParser.parse(lastComment.value);
-        const value = [
-          '```php',
-          '<?php', //TODO: remove when vscode will support php syntax highlighting without this
-          `function ${name}(${args.join(', ')}) {}`,
-          '```',
-          ast.summary,
-        ].join('\n');
-
-        completion.documentation = new MarkdownString(value);
-      }
-
-      this.completions.push(completion);
-    }
   }
 }

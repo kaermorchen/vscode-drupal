@@ -11,7 +11,6 @@ import {
 } from 'vscode';
 import { extname, join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -33,8 +32,8 @@ interface LinterMessage {
 export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.disposables.push(this.collection);
 
@@ -60,10 +59,7 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
   }
 
   async validate(document: TextDocument) {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
+    if (!this.drupalWorkspace.hasFile(document.uri)) {
       return;
     }
 

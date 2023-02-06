@@ -8,11 +8,9 @@ import {
   window,
   DocumentFormattingEditProvider,
   languages,
-  workspace,
 } from 'vscode';
 import { extname, join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import { DrupalWorkspaceProviderConstructorArguments } from '../types';
 
 export default class PHPCBFDocumentFormattingProvider
   extends DrupalWorkspaceProvider
@@ -20,15 +18,15 @@ export default class PHPCBFDocumentFormattingProvider
 {
   static language = 'php';
 
-  constructor(args: DrupalWorkspaceProviderConstructorArguments) {
-    super(args);
+  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
+    super(arg);
 
     this.disposables.push(
       languages.registerDocumentFormattingEditProvider(
         {
           language: PHPCBFDocumentFormattingProvider.language,
           scheme: 'file',
-          pattern: this.pattern,
+          pattern: this.drupalWorkspace.getRelativePattern('**'),
         },
         this
       )
@@ -40,13 +38,6 @@ export default class PHPCBFDocumentFormattingProvider
     options: FormattingOptions,
     token: CancellationToken
   ): Promise<TextEdit[]> {
-    if (
-      this.drupalWorkspace.workspaceFolder !==
-      workspace.getWorkspaceFolder(document.uri)
-    ) {
-      return [];
-    }
-
     const config = this.config;
 
     if (!config.get('enabled')) {
