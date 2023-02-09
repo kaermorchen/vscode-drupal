@@ -39,8 +39,7 @@
     "menus": {
       "editor/context": [
         {
-          "command": "drupal.search-api",
-          "when": "editorHasSelection"
+          "command": "drupal.search-api"
         }
       ]
     },
