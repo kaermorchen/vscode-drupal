@@ -14,23 +14,20 @@ export default class SearchApi extends TextEditorCommand {
   }
 
   async callback(editor: TextEditor) {
-    if (editor.selection.isEmpty) {
-      return;
-    }
-
-    // getWordRangeAtPosition
-
-    let version = 10;
+    const position = editor.selection.isEmpty
+      ? editor.document.getWordRangeAtPosition(editor.selection.active)
+      : editor.selection;
+    const selectedText = editor.document.getText(position);
     const workspaceFodler = workspace.getWorkspaceFolder(editor.document.uri);
     const drupalWorkspace = this.drupalWorkspaces.find(
       (item) => item.workspaceFolder === workspaceFodler
     );
+    let version = 10;
 
     if (drupalWorkspace) {
       version = (await drupalWorkspace.getDrupalVersion()) ?? version;
     }
 
-    const selectedText = editor.document.getText(editor.selection);
     const uri = Uri.parse(
       `https://api.drupal.org/api/drupal/${version}/search/${selectedText}`
     );
