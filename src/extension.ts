@@ -5,6 +5,7 @@ import DrupalWorkspace from './base/drupal-workspace';
 import getWorkspaceFolders from './utils/get-workspace-folders';
 import getComposer from './utils/get-composer';
 import SearchApi from './commands/search-api';
+import DrushTaskProvider from './providers/drush-task';
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
@@ -30,6 +31,7 @@ export async function activate(context: ExtensionContext) {
 
     // Common
     new DrupalStatusBar(),
+    new DrushTaskProvider(drupalWorkspaces),
 
     // Commands
     new SearchApi(drupalWorkspaces),

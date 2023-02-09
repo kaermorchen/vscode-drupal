@@ -16,20 +16,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "taskDefinitions": [
-      {
-        "type": "drush",
-        "required": [
-          "task"
-        ],
-        "properties": {
-          "task": {
-            "type": "string",
-            "description": "The task to customize"
-          }
-        }
-      }
-    ],
     "commands": [
       {
         "command": "drupal.search-api",

@@ -1,56 +1,43 @@
-import { readFile, access } from 'fs/promises';
 import {
-  CompletionItem,
-  CompletionItemKind,
-  ExtensionContext,
-  Position,
   ShellExecution,
   Task,
   TaskDefinition,
-  TaskGroup,
   TaskProvider,
   tasks,
   TaskScope,
-  TextDocument,
-  Uri,
-  window,
-  workspace,
 } from 'vscode';
-import { basename, join } from 'path';
-import { constants } from 'fs';
-import Provider from './provider';
-import { parse } from 'yaml';
-import { outputChannel } from './output-channel';
-import { exec, execSync, spawn } from 'child_process';
+import { execSync } from 'child_process';
+import Disposable from '../base/disposable';
+import DrupalWorkspace from '../base/drupal-workspace';
 
-export default class DrushTaskProvider extends Provider implements TaskProvider {
+export default class DrushTaskProvider
+  extends Disposable
+  implements TaskProvider
+{
   static id = 'drush';
-  private tasks: Task[] | undefined;
 
-  async provideTasks(): Promise<Task[]> {
-    if (this.tasks !== undefined) {
-      return this.tasks;
-    }
+  tasks: Task[] = [];
+  drupalWorkspaces: DrupalWorkspace[];
 
-    const workspaceFolders = workspace.workspaceFolders;
-    const result: Task[] = [];
+  constructor(drupalWorkspaces: DrupalWorkspace[]) {
+    super();
 
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return result;
-    }
+    this.drupalWorkspaces = drupalWorkspaces;
 
-    for (const workspaceFolder of workspaceFolders) {
-      const folderString = workspaceFolder.uri.fsPath;
+    this.commandLists();
 
-      if (!folderString) {
-        continue;
-      }
+    this.disposables.push(
+      tasks.registerTaskProvider(DrushTaskProvider.id, this)
+    );
+  }
 
-      const workspacePath = workspaceFolder.uri.fsPath;
-
+  async commandLists() {
+    for (const { workspaceFolder } of this.drupalWorkspaces) {
       try {
-        const drush = `php vendor/bin/drush`;
-        const stdout = execSync(`${drush} list --format=json`, { cwd: workspacePath });
+        const drush = 'vendor/bin/drush';
+        const stdout = execSync(`${drush} list --format=json`, {
+          cwd: workspaceFolder.uri.fsPath,
+        });
 
         if (stdout) {
           const json = JSON.parse(stdout.toString());
@@ -60,7 +47,7 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
               continue;
             }
 
-            const kind: TaskDefinition = {
+            const definition: TaskDefinition = {
               type: 'drush',
               task: item.name,
               detail: item.description,
@@ -68,37 +55,36 @@ export default class DrushTaskProvider extends Provider implements TaskProvider 
               options: item.definition.options,
             };
 
-            const task = await this.getTask(kind);
+            const task = await this.getTask(definition);
 
-            result.push(task);
+            this.tasks.push(task);
           }
         }
       } catch {
         // TODO: add error handler
       }
     }
+  }
 
-    this.tasks = result;
+  async getTask(definition: TaskDefinition): Promise<Task> {
+    const task = new Task(
+      definition,
+      TaskScope.Workspace,
+      definition.task,
+      'drush'
+    );
 
+    task.detail = definition.detail;
+    task.execution = new ShellExecution(`vendor/bin/drush ${definition.task}`);
+
+    return task;
+  }
+
+  async provideTasks() {
     return this.tasks;
   }
 
-  async resolveTask(task: Task): Promise<Task | undefined> {
-    if (!task) {
-      return undefined;
-    }
-
+  async resolveTask(task: Task) {
     return await this.getTask(task.definition);
-  }
-
-  async getTask(item: TaskDefinition): Promise<Task> {
-    const workspaceFolders = workspace.workspaceFolders;
-
-    const task = new Task(item, workspaceFolders![0], item.task, 'drush');
-
-    task.detail = item.detail;
-    task.execution = new ShellExecution(`php vendor/bin/drush ${item.task}`);
-
-    return task;
   }
 }
