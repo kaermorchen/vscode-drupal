@@ -14,3 +14,4 @@ This extension supports only Drupal projects which use composer template [drupal
 - code checker [Drupal coding standards](https://www.drupal.org/docs/develop/standards)
 - fixing coding standard violations
 - searching in Drupal API Documentation
+- translation autocompletion
