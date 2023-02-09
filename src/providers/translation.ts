@@ -3,12 +3,19 @@ import {
   CompletionItemKind,
   CompletionItemProvider,
   languages,
+  Position,
   TextDocument,
   Uri,
   workspace,
 } from 'vscode';
 import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+
+const prefixes = [
+  't(',
+  'formatPlural(',
+  'TranslatableMarkup(',
+];
 
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
@@ -70,7 +77,15 @@ export default class TranslationProvider
     );
   }
 
-  provideCompletionItems(document: TextDocument) {
-    return this.drupalWorkspace.hasFile(document.uri) ? this.completions : [];
+  provideCompletionItems(document: TextDocument, position: Position) {
+    const linePrefix = document
+      .lineAt(position)
+      .text.substring(0, position.character);
+
+    if (!prefixes.some((item) => linePrefix.includes(item))) {
+      return [];
+    }
+
+    return this.completions;
   }
 }
