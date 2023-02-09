@@ -17,6 +17,7 @@ import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
 import { Tail } from '../types';
 import getComposerLock from '../utils/get-composer-lock';
+import TranslationProvider from '../providers/translation';
 
 export default class DrupalWorkspace extends Disposable {
   workspaceFolder: WorkspaceFolder;
@@ -49,6 +50,12 @@ export default class DrupalWorkspace extends Disposable {
         drupalWorkspace: this,
         pattern: this.getRelativePattern(
           'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml'
+        ),
+      }),
+      new TranslationProvider({
+        drupalWorkspace: this,
+        pattern: this.getRelativePattern(
+          'web/modules/custom/**/*.po'
         ),
       }),
       new TwigCompletionProvider({
