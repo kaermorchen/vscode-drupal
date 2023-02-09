@@ -30,6 +30,20 @@
         }
       }
     ],
+    "commands": [
+			{
+				"command": "drupal.search-api",
+				"title": "Search Drupal API"
+			}
+		],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "drupal.search-api",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
     "icons": {
       "drupal-logo": {
         "description": "Drupal logo",

@@ -1,26 +1,10 @@
-import { ExtensionContext, languages, tasks } from 'vscode';
-import {
-  ExtensionContext,
-  languages,
-  RelativePattern,
-  workspace,
-} from 'vscode';
-import ShowOutputChannel from './commands/show-output-channel';
-import DrushTaskProvider from './providers/drush-task';
-import GlobalVariablesCompletionProvider from './providers/global-variables';
-import HookCompletionProvider from './providers/hook-completion';
-import PHPCBFDocumentFormattingProvider from './providers/phpbcf-formatter';
-import PHPCSDiagnosticProvider from './providers/phpcs-diagnostic';
-import PHPStanDiagnosticProvider from './providers/phpstan';
-import RoutingCompletionProvider from './providers/routing';
-import ServicesCompletionProvider from './providers/services';
-import TwigCompletionProvider from './providers/twig-completion';
-import { ExtensionContext, RelativePattern, workspace } from 'vscode';
+import { ExtensionContext } from 'vscode';
 import ShowOutputChannel from './commands/show-output-channel';
 import DrupalStatusBar from './base/drupal-status-bar';
 import DrupalWorkspace from './base/drupal-workspace';
 import getWorkspaceFolders from './utils/get-workspace-folders';
 import getComposer from './utils/get-composer';
+import SearchApi from './commands/search-api';
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
@@ -48,6 +32,7 @@ export async function activate(context: ExtensionContext) {
     new DrupalStatusBar(),
 
     // Commands
+    new SearchApi(drupalWorkspaces),
     new ShowOutputChannel()
   );
 }
