@@ -8,17 +8,16 @@ import {
   Uri,
   workspace,
 } from 'vscode';
-import { basename } from 'path';
-import { parse } from 'yaml';
+import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
 const prefixes = [
-  'Drupal::service(',
-  '$container->get(',
-  '$container->getDefinition(',
+  't(',
+  'formatPlural(',
+  'TranslatableMarkup(',
 ];
 
-export default class ServicesCompletionProvider
+export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
@@ -27,7 +26,9 @@ export default class ServicesCompletionProvider
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
+  constructor(
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+  ) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
@@ -35,7 +36,7 @@ export default class ServicesCompletionProvider
     this.disposables.push(
       languages.registerCompletionItemProvider(
         {
-          language: ServicesCompletionProvider.language,
+          language: TranslationProvider.language,
           scheme: 'file',
           pattern: this.drupalWorkspace.getRelativePattern('**'),
         },
@@ -56,22 +57,19 @@ export default class ServicesCompletionProvider
     for (const uri of uris) {
       const completions: CompletionItem[] = [];
       const buffer = await workspace.fs.readFile(uri);
-      const moduleName = basename(uri.path, '.services.yml');
-      const yaml = parse(buffer.toString());
+      const { translations } = gettextParser.po.parse(buffer.toString());
 
-      if ('services' in yaml) {
-        for (const name in yaml.services) {
-          const completion: CompletionItem = {
-            label: `${moduleName}.${name}`,
-            kind: CompletionItemKind.Class,
-            detail: `Service`,
-          };
-
-          completions.push(completion);
+      for (const context in translations) {
+        for (const item in translations[context]) {
+          completions.push({
+            label: item,
+            kind: CompletionItemKind.Text,
+            detail: 'translation',
+          });
         }
-
-        this.completionFileCache.set(uri.fsPath, completions);
       }
+
+      this.completionFileCache.set(uri.fsPath, completions);
     }
 
     this.completions = ([] as CompletionItem[]).concat(
@@ -79,7 +77,7 @@ export default class ServicesCompletionProvider
     );
   }
 
-  async provideCompletionItems(document: TextDocument, position: Position) {
+  provideCompletionItems(document: TextDocument, position: Position) {
     const linePrefix = document
       .lineAt(position)
       .text.substring(0, position.character);
