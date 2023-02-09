@@ -80,10 +80,6 @@ export default class ServicesCompletionProvider
   }
 
   async provideCompletionItems(document: TextDocument, position: Position) {
-    if (!this.drupalWorkspace.hasFile(document.uri)) {
-      return [];
-    }
-
     const linePrefix = document
       .lineAt(position)
       .text.substring(0, position.character);
