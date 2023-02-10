@@ -43,7 +43,7 @@ export default class DrupalWorkspace extends Disposable {
       new HookCompletionProvider({
         drupalWorkspace: this,
         pattern: this.getRelativePattern(
-          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.api.php'
+          'web/{core,core/modules/*,core/lib/Drupal/Core,modules/contrib/*,modules/custom/*}/*.api.php'
         ),
       }),
       new ServicesCompletionProvider({
