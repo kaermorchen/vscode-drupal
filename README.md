@@ -1,12 +1,9 @@
 # VSCode Drupal
 
-This is beta version. Work in progress.
-
 This extension supports only Drupal projects which use composer template [drupal/recommended-project](https://github.com/drupal/recommended-project).
 
 ## Features
-
-- syntax highlighting for Drupal's files
+- syntax highlighting
 - hook completion
 - twig completion
 - service completion
@@ -14,4 +11,10 @@ This extension supports only Drupal projects which use composer template [drupal
 - code checker [Drupal coding standards](https://www.drupal.org/docs/develop/standards)
 - fixing coding standard violations
 - searching in Drupal API Documentation
-- translation autocompletion
+- translation autocomplete
+
+## Install
+
+```bash
+composer require --dev drupal/coder mglaman/phpstan-drupal phpstan/extension-installer phpstan/phpstan phpstan/phpstan-deprecation-rules squizlabs/php_codesniffer
+```

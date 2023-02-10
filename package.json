@@ -148,7 +148,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -b",
+    "compile": "rm -rf ./out && tsc -b",
     "watch": "tsc -b -w"
   },
   "devDependencies": {
