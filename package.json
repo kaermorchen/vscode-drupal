@@ -33,12 +33,11 @@
       {
         "type": "drush",
         "required": [
-          "task"
+          "name"
         ],
         "properties": {
-          "task": {
-            "type": "string",
-            "description": "The task to customize"
+          "name": {
+            "type": "string"
           }
         }
       }

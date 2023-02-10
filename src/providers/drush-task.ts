@@ -5,6 +5,7 @@ import {
   TaskProvider,
   tasks,
   TaskScope,
+  window,
 } from 'vscode';
 import { execSync } from 'child_process';
 import Disposable from '../base/disposable';
@@ -49,13 +50,20 @@ export default class DrushTaskProvider
 
             const definition: TaskDefinition = {
               type: 'drush',
-              task: item.name,
-              detail: item.description,
+              name: item.name,
+              description: item.description,
               arguments: item.definition.arguments,
               options: item.definition.options,
+              usage: item.usage[0],
             };
 
-            const task = await this.getTask(definition);
+            const task = new Task(
+              definition,
+              workspaceFolder,
+              definition.name,
+              'drush',
+              // new ShellExecution(`vendor/bin/drush ${definition.name}`)
+            );
 
             this.tasks.push(task);
           }
@@ -70,12 +78,27 @@ export default class DrushTaskProvider
     const task = new Task(
       definition,
       TaskScope.Workspace,
-      definition.task,
+      definition.name,
       'drush'
     );
-
     task.detail = definition.detail;
-    task.execution = new ShellExecution(`vendor/bin/drush ${definition.task}`);
+
+    const args = [];
+    console.log(definition);
+
+    const result = await window.showInputBox({
+      title: `drush ${definition.name}`,
+    });
+
+    // TODO: add cancel token
+
+    if (result) {
+      args.push(result);
+    }
+
+    task.execution = new ShellExecution(
+      `vendor/bin/drush ${definition.name} ${args.join(' ')}`
+    );
 
     return task;
   }
