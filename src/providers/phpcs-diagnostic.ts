@@ -56,6 +56,18 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
       this,
       this.disposables
     );
+
+    workspace.onDidCloseTextDocument(
+      this.clearDiagnostics,
+      this,
+      this.disposables
+    );
+  }
+
+  clearDiagnostics(doc: TextDocument) {
+    if (this.collection.has(doc.uri)) {
+      this.collection.set(doc.uri, []);
+    }
   }
 
   async validate(document: TextDocument) {
