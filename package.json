@@ -3,13 +3,21 @@
   "displayName": "Drupal",
   "description": "A Drupal extension for VS Code",
   "version": "0.0.0",
-  "publisher": "",
-  "repository": "",
+  "publisher": "stanislav",
+  "repository": "https://github.com/kaermorchen/vscode-drupal",
+  "author": "Stanislav Romanov <kaermorchen@gmail.com>",
   "engines": {
     "vscode": "^1.74.0"
   },
+  "keywords": [
+    "Drupal"
+  ],
+  "icon": "assets/logo.png",
+  "license": "MIT",
   "categories": [
-    "Snippets"
+    "Linters",
+    "Snippets",
+    "Other"
   ],
   "activationEvents": [
     "onStartupFinished"
