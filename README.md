@@ -17,17 +17,14 @@ This extension supports only Drupal projects which use composer template [drupal
 - translation autocomplete (in php files)
 
 ## Install
-
 The code checker and the formatter use some php packages. Install them locally as dev dependencies, or configure the paths in extension settings if they are global.
 
 ```bash
 composer require --dev drupal/coder squizlabs/php_codesniffer mglaman/phpstan-drupal phpstan/extension-installer phpstan/phpstan phpstan/phpstan-deprecation-rules
 ```
 
-### ToDo
-
+### TODO
 - Drupal JavaScript snippets
-- Drupal global functions
 - Translation autocomplete for js, yaml, twig
 - Autogeneration PO files
 - Drush integration

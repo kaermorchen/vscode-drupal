@@ -10,12 +10,9 @@ import {
 } from 'vscode';
 import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+import getModuleUri from '../utils/get-module-uri';
 
-const prefixes = [
-  't(',
-  'formatPlural(',
-  'TranslatableMarkup(',
-];
+const prefixes = ['t(', 'formatPlural(', 'TranslatableMarkup('];
 
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
@@ -23,8 +20,7 @@ export default class TranslationProvider
 {
   static language = 'php';
 
-  completions: CompletionItem[] = [];
-  completionFileCache: Map<string, CompletionItem[]> = new Map();
+  moduleCompletions: Map<string, CompletionItem[]> = new Map();
 
   constructor(
     arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
@@ -55,37 +51,48 @@ export default class TranslationProvider
       : await this.drupalWorkspace.findFiles(this.pattern);
 
     for (const uri of uris) {
-      const completions: CompletionItem[] = [];
+      const moduleUri = await getModuleUri(uri);
+
+      if (!moduleUri) {
+        continue;
+      }
+
       const buffer = await workspace.fs.readFile(uri);
       const { translations } = gettextParser.po.parse(buffer.toString());
+      const completions: CompletionItem[] =
+        this.moduleCompletions.get(moduleUri.fsPath) ?? [];
 
       for (const context in translations) {
         for (const item in translations[context]) {
-          completions.push({
-            label: item,
-            kind: CompletionItemKind.Text,
-            detail: 'translation',
-          });
+          if (item !== '') {
+            completions.push({
+              label: item,
+              kind: CompletionItemKind.Text,
+              detail: 'translation',
+            });
+          }
         }
       }
 
-      this.completionFileCache.set(uri.fsPath, completions);
+      this.moduleCompletions.set(moduleUri.fsPath, completions);
     }
-
-    this.completions = ([] as CompletionItem[]).concat(
-      ...this.completionFileCache.values()
-    );
   }
 
-  provideCompletionItems(document: TextDocument, position: Position) {
-    const linePrefix = document
-      .lineAt(position)
-      .text.substring(0, position.character);
+  async provideCompletionItems(document: TextDocument, position: Position) {
+    const moduleUri = await getModuleUri(document.uri);
 
-    if (!prefixes.some((item) => linePrefix.includes(item))) {
-      return [];
+    if (moduleUri) {
+      const linePrefix = document
+        .lineAt(position)
+        .text.substring(0, position.character);
+
+      if (!prefixes.some((item) => linePrefix.includes(item))) {
+        return [];
+      }
+
+      return this.moduleCompletions.get(moduleUri.fsPath) ?? [];
     }
 
-    return this.completions;
+    return [];
   }
 }
