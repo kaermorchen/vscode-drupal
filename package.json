@@ -24,6 +24,60 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "yamlValidation": [
+      {
+        "fileMatch": "*.info.yml",
+        "url": "https://json.schemastore.org/drupal-info.json"
+      },
+      {
+        "fileMatch": "*.links.menu.yml",
+        "url": "https://json.schemastore.org/drupal-links-menu.json"
+      },
+      {
+        "fileMatch": "*.links.task.yml",
+        "url": "https://json.schemastore.org/drupal-links-task.json"
+      },
+      {
+        "fileMatch": "*.links.action.yml",
+        "url": "https://json.schemastore.org/drupal-links-action.json"
+      },
+      {
+        "fileMatch": "*.links.contextual.yml",
+        "url": "https://json.schemastore.org/drupal-links-contextual.json"
+      },
+      {
+        "fileMatch": "*.routing.yml",
+        "url": "https://json.schemastore.org/drupal-routing.json"
+      },
+      {
+        "fileMatch": "*.breakpoints.yml",
+        "url": "https://json.schemastore.org/drupal-breakpoints.json"
+      },
+      {
+        "fileMatch": "*.layouts.yml",
+        "url": "https://json.schemastore.org/drupal-layouts.json"
+      },
+      {
+        "fileMatch": "migrations/*.yml",
+        "url": "https://json.schemastore.org/drupal-migration.json"
+      },
+      {
+        "fileMatch": "*.services.yml",
+        "url": "https://json.schemastore.org/drupal-services.json"
+      },
+      {
+        "fileMatch": "*.schema.yml",
+        "url": "https://json.schemastore.org/drupal-config.json"
+      },
+      {
+        "fileMatch": "*.libraries.yml",
+        "url": "https://json.schemastore.org/drupal-libraries.json"
+      },
+      {
+        "fileMatch": "*.permissions.yml",
+        "url": "https://json.schemastore.org/drupal-permissions.json"
+      }
+    ],
     "commands": [
       {
         "command": "drupal.search-api",
