@@ -8,6 +8,7 @@ import {
   DocumentFormattingEditProvider,
   languages,
   Uri,
+  DocumentSelector,
 } from 'vscode';
 import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
@@ -18,18 +19,19 @@ export default class PHPCBFProvider
 {
   static language = 'php';
 
+  docSelector: DocumentSelector;
+
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
 
+    this.docSelector = {
+      language: PHPCBFProvider.language,
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    };
+
     this.disposables.push(
-      languages.registerDocumentFormattingEditProvider(
-        {
-          language: PHPCBFProvider.language,
-          scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**'),
-        },
-        this
-      )
+      languages.registerDocumentFormattingEditProvider(this.docSelector, this)
     );
   }
 

@@ -9,8 +9,9 @@ import {
   Range,
   Position,
   Uri,
+  DocumentSelector,
 } from 'vscode';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 
 const LINTER_MESSAGE_TYPE = {
@@ -32,9 +33,16 @@ interface LinterMessage {
 
 export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
+  docSelector: DocumentSelector;
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
+
+    this.docSelector = {
+      language: 'php',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    };
 
     this.disposables.push(this.collection);
 
@@ -72,7 +80,7 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
   }
 
   async validate(document: TextDocument) {
-    if (!this.drupalWorkspace.hasFile(document.uri)) {
+    if (languages.match(this.docSelector, document) === 0) {
       return;
     }
 
