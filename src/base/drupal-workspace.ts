@@ -9,7 +9,7 @@ import {
 import Disposable from './disposable';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
 import HookCompletionProvider from '../providers/hook-completion';
-import PHPCBFDocumentFormattingProvider from '../providers/phpbcf-formatter';
+import PHPCBFProvider from '../providers/phpcbf';
 import PHPCSDiagnosticProvider from '../providers/phpcs-diagnostic';
 import PHPStanDiagnosticProvider from '../providers/phpstan';
 import RoutingCompletionProvider from '../providers/routing';
@@ -61,7 +61,7 @@ export default class DrupalWorkspace extends Disposable {
       new TwigCompletionProvider({
         drupalWorkspace: this,
       }),
-      new PHPCBFDocumentFormattingProvider({
+      new PHPCBFProvider({
         drupalWorkspace: this,
       }),
       new PHPCSDiagnosticProvider({

@@ -5,15 +5,14 @@ import {
   FormattingOptions,
   CancellationToken,
   TextEdit,
-  window,
   DocumentFormattingEditProvider,
   languages,
   Uri,
 } from 'vscode';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 
-export default class PHPCBFDocumentFormattingProvider
+export default class PHPCBFProvider
   extends DrupalWorkspaceProvider
   implements DocumentFormattingEditProvider
 {
@@ -25,7 +24,7 @@ export default class PHPCBFDocumentFormattingProvider
     this.disposables.push(
       languages.registerDocumentFormattingEditProvider(
         {
-          language: PHPCBFDocumentFormattingProvider.language,
+          language: PHPCBFProvider.language,
           scheme: 'file',
           pattern: this.drupalWorkspace.getRelativePattern('**'),
         },
@@ -45,9 +44,9 @@ export default class PHPCBFDocumentFormattingProvider
       return [];
     }
 
-    let executablePath = config.get('executablePath') as string;
+    let executablePath = config.get<string>('executablePath', '');
 
-    if (!executablePath || executablePath === '') {
+    if (executablePath === '') {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
         'vendor/bin/phpcbf'
@@ -69,11 +68,7 @@ export default class PHPCBFDocumentFormattingProvider
       ];
 
       // TODO: add abort signal
-      const process = spawn(
-        executablePath,
-        args,
-        spawnOptions
-      );
+      const process = spawn(executablePath, args, spawnOptions);
       const originalText = document.getText();
 
       process.stdin.write(originalText);

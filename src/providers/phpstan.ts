@@ -67,9 +67,9 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
       return;
     }
 
-    let executablePath = config.get('executablePath') as string;
+    let executablePath = config.get<string>('executablePath', '');
 
-    if (!executablePath || executablePath === '') {
+    if (executablePath === '') {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
         'vendor/bin/phpstan'
