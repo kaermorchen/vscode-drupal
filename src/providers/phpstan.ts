@@ -8,6 +8,7 @@ import {
   workspace,
   Range,
   Position,
+  Uri,
 } from 'vscode';
 import { join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
@@ -66,11 +67,13 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
       return;
     }
 
-    const executablePath = config.get('executablePath') as string;
+    let executablePath = config.get('executablePath') as string;
 
-    if (!executablePath) {
-      window.showErrorMessage('Setting `executablePath` not found');
-      return;
+    if (!executablePath || executablePath === '') {
+      executablePath = Uri.joinPath(
+        this.drupalWorkspace.workspaceFolder.uri,
+        'vendor/bin/phpstan'
+      ).fsPath;
     }
 
     const filePath = document.uri.path;
@@ -89,7 +92,7 @@ export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
 
     // TODO: add abort signal
     const process = spawn(
-      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
+      executablePath,
       args,
       spawnOptions
     );

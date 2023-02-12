@@ -8,6 +8,7 @@ import {
   workspace,
   Range,
   Position,
+  Uri,
 } from 'vscode';
 import { extname, join } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
@@ -81,11 +82,13 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
       return;
     }
 
-    const executablePath = config.get('executablePath') as string;
+    let executablePath = config.get('executablePath') as string;
 
-    if (!executablePath) {
-      window.showErrorMessage('Setting `executablePath` not found');
-      return;
+    if (!executablePath || executablePath === '') {
+      executablePath = Uri.joinPath(
+        this.drupalWorkspace.workspaceFolder.uri,
+        'vendor/bin/phpcs'
+      ).fsPath;
     }
 
     const filePath = document.uri.path;
@@ -103,11 +106,7 @@ export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
     ];
 
     // TODO: add abort signal
-    const process = spawn(
-      join(this.drupalWorkspace.workspaceFolder.uri.fsPath, executablePath),
-      args,
-      spawnOptions
-    );
+    const process = spawn(executablePath, args, spawnOptions);
 
     process.stdin.write(document.getText());
     process.stdin.end();

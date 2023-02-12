@@ -136,8 +136,7 @@
             "order": 11,
             "scope": "resource",
             "type": "string",
-            "default": "vendor/bin/phpcs",
-            "markdownDescription": "Path to phpcs"
+            "markdownDescription": "Path to phpcs. Will use `vendor/bin/phpcs` if empty."
           },
           "drupal.phpcs.args": {
             "order": 12,
@@ -159,8 +158,7 @@
             "order": 21,
             "scope": "resource",
             "type": "string",
-            "default": "vendor/bin/phpcbf",
-            "markdownDescription": "Path to phpcbf"
+            "markdownDescription": "Path to phpcbf. Will use `vendor/bin/phpcbf` if empty."
           },
           "drupal.phpcbf.args": {
             "order": 22,
@@ -182,8 +180,7 @@
             "order": 31,
             "scope": "resource",
             "type": "string",
-            "default": "vendor/bin/phpstan",
-            "markdownDescription": "Path to phpstan"
+            "markdownDescription": "Path to phpstan. Will use `vendor/bin/phpstan` if empty."
           },
           "drupal.phpstan.args": {
             "order": 32,
