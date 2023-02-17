@@ -10,8 +10,8 @@ import Disposable from './disposable';
 import GlobalVariablesCompletionProvider from '../providers/global-variables';
 import HookCompletionProvider from '../providers/hook-completion';
 import PHPCBFProvider from '../providers/phpcbf';
-import PHPCSDiagnosticProvider from '../providers/phpcs-diagnostic';
-import PHPStanDiagnosticProvider from '../providers/phpstan';
+import PHPCSProvider from '../providers/phpcs';
+import PHPStanProvider from '../providers/phpstan';
 import RoutingCompletionProvider from '../providers/routing';
 import ServicesCompletionProvider from '../providers/services';
 import TwigCompletionProvider from '../providers/twig-completion';
@@ -64,10 +64,10 @@ export default class DrupalWorkspace extends Disposable {
       new PHPCBFProvider({
         drupalWorkspace: this,
       }),
-      new PHPCSDiagnosticProvider({
+      new PHPCSProvider({
         drupalWorkspace: this,
       }),
-      new PHPStanDiagnosticProvider({
+      new PHPStanProvider({
         drupalWorkspace: this,
       })
     );

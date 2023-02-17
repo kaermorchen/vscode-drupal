@@ -173,7 +173,7 @@
             "order": 30,
             "scope": "resource",
             "type": "boolean",
-            "default": true,
+            "default": false,
             "markdownDescription": "Enables [phpstan](https://phpstan.org/) analyse"
           },
           "drupal.phpstan.executablePath": {

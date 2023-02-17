@@ -31,7 +31,7 @@ interface LinterMessage {
   column: number;
 }
 
-export default class PHPCSDiagnosticProvider extends DrupalWorkspaceProvider {
+export default class PHPCSProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
   docSelector: DocumentSelector;
 

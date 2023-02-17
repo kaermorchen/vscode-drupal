@@ -19,7 +19,7 @@ interface Message {
   line: number;
 }
 
-export default class PHPStanDiagnosticProvider extends DrupalWorkspaceProvider {
+export default class PHPStanProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
   docSelector: DocumentSelector;
 
