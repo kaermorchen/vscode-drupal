@@ -11,17 +11,29 @@ This extension supports only Drupal projects which use composer template [drupal
 - twig completion
 - service completion
 - global variables completion
-- code checker [Drupal coding standards](https://www.drupal.org/docs/develop/standards)
-- fixing coding standard violations
+- code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) (used [phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
+- document formatting by standards (used [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer))
 - searching in Drupal API Documentation
 - translation autocomplete (in php files for now)
 - validation and autocomplete for YAML files
 
+## Experimental features
+- PHPStan analysis (used [PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal))
+
+The experimental features turned off by default.
+
 ## Install
-The code checker and the formatter use a few php packages. Install them locally as dev dependencies, or configure the paths in extension settings if they are global.
+
+Code checking and formatting require the following packages:
 
 ```bash
-composer require --dev drupal/coder squizlabs/php_codesniffer mglaman/phpstan-drupal phpstan/extension-installer phpstan/phpstan phpstan/phpstan-deprecation-rules
+composer require --dev squizlabs/php_codesniffer drupal/coder
+```
+
+PHPStan analysis requires the following packages:
+
+```bash
+composer require --dev phpstan/phpstan phpstan/extension-installer phpstan/phpstan-deprecation-rules mglaman/phpstan-drupal
 ```
 
 For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension must be installed.
