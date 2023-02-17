@@ -41,7 +41,7 @@ export default class HookCompletionProvider
         {
           language: HookCompletionProvider.language,
           scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**'),
+          pattern: this.drupalWorkspace.getRelativePattern('**/*.{module,theme}'),
         },
         this
       )
