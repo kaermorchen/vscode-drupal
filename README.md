@@ -1,8 +1,5 @@
 # VSCode Drupal
 
-> **Note**
-> Work is still in progress.
-
 This extension supports only Drupal projects which use composer template [drupal/recommended-project](https://github.com/drupal/recommended-project).
 
 ## Features
@@ -35,6 +32,8 @@ PHPStan analysis requires the following packages:
 ```bash
 composer require --dev phpstan/phpstan phpstan/extension-installer phpstan/phpstan-deprecation-rules mglaman/phpstan-drupal
 ```
+
+Package paths can be specified in the extension settings.
 
 For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension must be installed.
 
