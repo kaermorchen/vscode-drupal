@@ -26,7 +26,6 @@ const twigFunctions: CompletionItemWithCallback[] = [
   {
     label: 'url',
     insertText: '{{ url(${1:name}) }}',
-    detail: `function (Drupal)`,
     callback: `\\Drupal\\Core\\Template\\TwigExtension::getUrl`,
   },
   {
