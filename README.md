@@ -17,7 +17,7 @@ This extension supports only Drupal projects which use composer template [drupal
 ## Experimental features
 - PHPStan analysis (used [PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal))
 
-The experimental features turned off by default.
+The experimental features turned off by default. But you can turn them on in the extension settings.
 
 ## Install
 
