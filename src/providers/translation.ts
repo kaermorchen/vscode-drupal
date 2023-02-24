@@ -46,6 +46,11 @@ export default class TranslationProvider
   }
 
   async parseFiles(uri?: Uri) {
+    // Clear all completions if file po was changed
+    if (uri) {
+      this.moduleCompletions.clear();
+    }
+
     const uris = uri
       ? [uri]
       : await this.drupalWorkspace.findFiles(this.pattern);
