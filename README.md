@@ -37,6 +37,20 @@ Package paths can be specified in the extension settings.
 
 For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension must be installed.
 
+## Demo
+
+### Hook completion
+![hook](https://user-images.githubusercontent.com/11972062/221161428-f869742f-1060-40a3-8ab7-483e8cf65a89.gif)
+
+### Code checking and formatting
+![phpcs](https://user-images.githubusercontent.com/11972062/221161739-cabcd4b5-800d-4d5b-8071-9324bf2bcc08.gif)
+
+### Translation autocomplete
+![translates](https://user-images.githubusercontent.com/11972062/221161829-1e1deaf4-873c-4325-b937-2206b83af349.gif)
+
+### Drupal Search API
+![search](https://user-images.githubusercontent.com/11972062/221161916-4b470ae6-49ce-4093-a3b4-8299de2f342a.gif)
+
 ### TODO
 - Drupal JavaScript snippets
 - Translation autocomplete for js, yaml, twig
