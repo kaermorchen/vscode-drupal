@@ -12,7 +12,7 @@ import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 import getModuleUri from '../utils/get-module-uri';
 
-const prefixes = [' t(', 'formatPlural(', 'TranslatableMarkup('];
+const prefixes = ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup('];
 
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
