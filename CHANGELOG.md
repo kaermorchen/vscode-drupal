@@ -1,4 +1,13 @@
 
+
+## v0.2.0 (2023-02-25)
+
+#### :rocket: Enhancement
+* [#15](https://github.com/kaermorchen/vscode-drupal/pull/15) Added translation autocomplete for js yaml twig ([@kaermorchen](https://github.com/kaermorchen))
+
+#### Committers: 1
+- Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
+
 ## v0.1.2 (2023-02-24)
 
 ## v0.1.1 (2023-02-24)
