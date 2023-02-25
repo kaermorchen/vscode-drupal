@@ -11,7 +11,7 @@ This extension supports only Drupal projects which use composer template [drupal
 - code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) (used [phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
 - document formatting by standards (used [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer))
 - searching in Drupal API Documentation
-- translation autocomplete (in php files for now)
+- translation autocomplete (php, twig, yml, js)
 - validation and autocomplete for YAML files
 
 ## Experimental features
@@ -52,8 +52,5 @@ For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=r
 ![search](https://user-images.githubusercontent.com/11972062/221161916-4b470ae6-49ce-4093-a3b4-8299de2f342a.gif)
 
 ### TODO
-- Drupal JavaScript snippets
-- Translation autocomplete for js, yaml, twig
 - Autogeneration PO files
-- Drush integration
 - Twig local variable completion
