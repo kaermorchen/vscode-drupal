@@ -2,6 +2,8 @@ import {
   CompletionItem,
   CompletionItemKind,
   CompletionItemProvider,
+  DocumentFilter,
+  DocumentSelector,
   languages,
   Position,
   TextDocument,
@@ -12,15 +14,29 @@ import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 import getModuleUri from '../utils/get-module-uri';
 
-const prefixes = ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup('];
+const prefixes: Map<string, string[]> = new Map([
+  ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
+  ['javascript', ['Drupal.t(']],
+]);
 
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
-  static language = 'php';
-
   moduleCompletions: Map<string, CompletionItem[]> = new Map();
+
+  selectors: DocumentFilter[] = [
+    {
+      language: 'php',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    },
+    {
+      language: 'javascript',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**/*.js'),
+    },
+  ];
 
   constructor(
     arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
@@ -31,11 +47,7 @@ export default class TranslationProvider
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
-        {
-          language: TranslationProvider.language,
-          scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**'),
-        },
+        <DocumentFilter[]>Array.from(this.selectors.values()),
         this,
         '"',
         "'"
@@ -91,11 +103,11 @@ export default class TranslationProvider
         .lineAt(position)
         .text.substring(0, position.character);
 
-      if (!prefixes.some((item) => linePrefix.includes(item))) {
-        return [];
-      }
+      const langPrefixes = prefixes.get(document.languageId) ?? [];
 
-      return this.moduleCompletions.get(moduleUri.fsPath) ?? [];
+      if (langPrefixes.some((item) => linePrefix.includes(item))) {
+        return this.moduleCompletions.get(moduleUri.fsPath) ?? [];
+      }
     }
 
     return [];
