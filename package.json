@@ -114,6 +114,18 @@
           ".test",
           ".theme"
         ]
+      },
+      {
+        "id": "twig",
+        "aliases": [
+          "HTML (Twig)",
+          "twig"
+        ],
+        "extensions": [
+          ".twig",
+          ".html.twig"
+        ],
+        "configuration": "./languages/twig.configuration.json"
       }
     ],
     "configurationDefaults": {

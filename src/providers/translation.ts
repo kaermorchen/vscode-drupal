@@ -2,8 +2,11 @@ import {
   CompletionItem,
   CompletionItemKind,
   CompletionItemProvider,
+  DocumentFilter,
   languages,
   Position,
+  Range,
+  SnippetString,
   TextDocument,
   Uri,
   workspace,
@@ -12,15 +15,43 @@ import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 import getModuleUri from '../utils/get-module-uri';
 
-const prefixes = ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup('];
+const prefixes: Map<string, string[]> = new Map([
+  ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
+  ['javascript', ['Drupal.t(']],
+  ['yaml', ['_title: ', 'title: ']],
+  ['twig', ['{{ ', '{{']],
+]);
 
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
-  static language = 'php';
-
   moduleCompletions: Map<string, CompletionItem[]> = new Map();
+
+  selectors: DocumentFilter[] = [
+    {
+      language: 'php',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    },
+    {
+      language: 'javascript',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**/*.js'),
+    },
+    {
+      language: 'yaml',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern(
+        '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml'
+      ),
+    },
+    {
+      language: 'twig',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    },
+  ];
 
   constructor(
     arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
@@ -30,16 +61,7 @@ export default class TranslationProvider
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
-      languages.registerCompletionItemProvider(
-        {
-          language: TranslationProvider.language,
-          scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**'),
-        },
-        this,
-        '"',
-        "'"
-      )
+      languages.registerCompletionItemProvider(this.selectors, this, '"', "'")
     );
 
     this.parseFiles();
@@ -90,12 +112,11 @@ export default class TranslationProvider
       const linePrefix = document
         .lineAt(position)
         .text.substring(0, position.character);
+      const langPrefixes = prefixes.get(document.languageId) ?? [];
 
-      if (!prefixes.some((item) => linePrefix.includes(item))) {
-        return [];
+      if (langPrefixes.some((item) => linePrefix.includes(item))) {
+        return this.moduleCompletions.get(moduleUri.fsPath);
       }
-
-      return this.moduleCompletions.get(moduleUri.fsPath) ?? [];
     }
 
     return [];
