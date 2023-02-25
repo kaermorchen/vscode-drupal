@@ -5,6 +5,8 @@ import {
   DocumentFilter,
   languages,
   Position,
+  Range,
+  SnippetString,
   TextDocument,
   Uri,
   workspace,
@@ -17,6 +19,7 @@ const prefixes: Map<string, string[]> = new Map([
   ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
   ['javascript', ['Drupal.t(']],
   ['yaml', ['_title: ', 'title: ']],
+  ['twig', ['{{ ', '{{']],
 ]);
 
 export default class TranslationProvider
@@ -42,6 +45,11 @@ export default class TranslationProvider
       pattern: this.drupalWorkspace.getRelativePattern(
         '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml'
       ),
+    },
+    {
+      language: 'twig',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
     },
   ];
 
@@ -104,12 +112,10 @@ export default class TranslationProvider
       const linePrefix = document
         .lineAt(position)
         .text.substring(0, position.character);
-
       const langPrefixes = prefixes.get(document.languageId) ?? [];
 
       if (langPrefixes.some((item) => linePrefix.includes(item))) {
-        const result = this.moduleCompletions.get(moduleUri.fsPath);
-        return result;
+        return this.moduleCompletions.get(moduleUri.fsPath);
       }
     }
 
