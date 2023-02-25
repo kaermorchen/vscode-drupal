@@ -3,7 +3,6 @@ import {
   CompletionItemKind,
   CompletionItemProvider,
   DocumentFilter,
-  DocumentSelector,
   languages,
   Position,
   TextDocument,
@@ -17,6 +16,7 @@ import getModuleUri from '../utils/get-module-uri';
 const prefixes: Map<string, string[]> = new Map([
   ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
   ['javascript', ['Drupal.t(']],
+  ['yaml', ['_title: ', 'title: ']],
 ]);
 
 export default class TranslationProvider
@@ -36,6 +36,13 @@ export default class TranslationProvider
       scheme: 'file',
       pattern: this.drupalWorkspace.getRelativePattern('**/*.js'),
     },
+    {
+      language: 'yaml',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern(
+        '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml'
+      ),
+    },
   ];
 
   constructor(
@@ -46,12 +53,7 @@ export default class TranslationProvider
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
-      languages.registerCompletionItemProvider(
-        <DocumentFilter[]>Array.from(this.selectors.values()),
-        this,
-        '"',
-        "'"
-      )
+      languages.registerCompletionItemProvider(this.selectors, this, '"', "'")
     );
 
     this.parseFiles();
@@ -106,7 +108,8 @@ export default class TranslationProvider
       const langPrefixes = prefixes.get(document.languageId) ?? [];
 
       if (langPrefixes.some((item) => linePrefix.includes(item))) {
-        return this.moduleCompletions.get(moduleUri.fsPath) ?? [];
+        const result = this.moduleCompletions.get(moduleUri.fsPath);
+        return result;
       }
     }
 
