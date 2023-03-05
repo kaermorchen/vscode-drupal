@@ -1,8 +1,8 @@
-import { readFile } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-export default async function getPackage() {
-  const pack: string = await readFile(
+export default function getPackage() {
+  const pack: string = readFileSync(
     resolve(__dirname, '../package.json'),
     'utf8'
   );

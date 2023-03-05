@@ -9,10 +9,10 @@ import {
   Range,
   Position,
   Uri,
-  DocumentSelector,
+  DocumentFilter,
 } from 'vscode';
-import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import getPackage from '../utils/get-package';
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -31,20 +31,27 @@ interface LinterMessage {
   column: number;
 }
 
+const pack = getPackage();
+
 export default class PHPCSProvider extends DrupalWorkspaceProvider {
+  extensions: string;
   collection = languages.createDiagnosticCollection();
-  docSelector: DocumentSelector;
+  documentFilters: DocumentFilter[] = ['php', 'twig'].map((language) => ({
+    language,
+    scheme: 'file',
+    pattern: this.drupalWorkspace.getRelativePattern('**'),
+  }));
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
 
-    this.docSelector = {
-      language: 'php',
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
-    };
-
     this.disposables.push(this.collection);
+
+    this.extensions = pack.contributes.languages
+      .map((lang: { id: string; extensions: string[] }) =>
+        lang.extensions.map((item) => item.substring(1)).join(',')
+      )
+      .join(',');
 
     if (window.activeTextEditor) {
       this.validate(window.activeTextEditor.document);
@@ -80,7 +87,7 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
   }
 
   async validate(document: TextDocument) {
-    if (languages.match(this.docSelector, document) === 0) {
+    if (languages.match(this.documentFilters, document) === 0) {
       return;
     }
 
@@ -109,7 +116,7 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
       '-q',
       '--report=json',
       `--stdin-path=${filePath}`,
-      `--extensions=${extname(filePath).slice(1)}/php`,
+      `--extensions=${this.extensions}`,
       '-',
     ];
 
