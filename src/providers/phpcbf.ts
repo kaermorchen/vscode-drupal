@@ -8,30 +8,36 @@ import {
   DocumentFormattingEditProvider,
   languages,
   Uri,
-  DocumentSelector,
+  DocumentFilter,
 } from 'vscode';
-import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import getPackage from '../utils/get-package';
 
 export default class PHPCBFProvider
   extends DrupalWorkspaceProvider
   implements DocumentFormattingEditProvider
 {
-  static language = 'php';
-
-  docSelector: DocumentSelector;
+  documentFilters: DocumentFilter[] = [
+    {
+      language: 'php',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    },
+    {
+      language: 'twig',
+      scheme: 'file',
+      pattern: this.drupalWorkspace.getRelativePattern('**'),
+    },
+  ];
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
 
-    this.docSelector = {
-      language: PHPCBFProvider.language,
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
-    };
-
     this.disposables.push(
-      languages.registerDocumentFormattingEditProvider(this.docSelector, this)
+      languages.registerDocumentFormattingEditProvider(
+        this.documentFilters,
+        this
+      )
     );
   }
 
@@ -55,6 +61,13 @@ export default class PHPCBFProvider
       ).fsPath;
     }
 
+    const pack = await getPackage();
+    const extensions = pack.contributes.languages
+      .map((lang: { id: string; extensions: string[] }) =>
+        lang.extensions.map((item) => item.substring(1)).join(',')
+      )
+      .join(',');
+
     return new Promise((resolve, reject) => {
       const filePath = document.uri.path;
       const spawnOptions = {
@@ -65,7 +78,7 @@ export default class PHPCBFProvider
         ...config.get('args', []),
         '-q',
         `--stdin-path=${filePath}`,
-        `--extensions=${extname(filePath).slice(1)}/php`,
+        `--extensions=${extensions}`,
         '-',
       ];
 
