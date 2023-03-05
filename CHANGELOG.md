@@ -1,4 +1,10 @@
+## v0.3.0 (2023-03-05)
 
+#### :rocket: Enhancement
+* [#16](https://github.com/kaermorchen/vscode-drupal/pull/16) Added formatter for twig ([@kaermorchen](https://github.com/kaermorchen))
+
+#### Committers: 1
+- Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
 
 ## v0.2.0 (2023-02-25)
 
@@ -35,4 +41,3 @@
 
 #### Committers: 1
 - Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
-
