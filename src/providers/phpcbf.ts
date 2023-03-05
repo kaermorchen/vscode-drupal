@@ -8,31 +8,39 @@ import {
   DocumentFormattingEditProvider,
   languages,
   Uri,
-  DocumentSelector,
+  DocumentFilter,
 } from 'vscode';
-import { extname } from 'path';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import getPackage from '../utils/get-package';
+
+const pack = getPackage();
 
 export default class PHPCBFProvider
   extends DrupalWorkspaceProvider
   implements DocumentFormattingEditProvider
 {
-  static language = 'php';
-
-  docSelector: DocumentSelector;
+  extensions: string;
+  documentFilters: DocumentFilter[] = ['php', 'twig'].map((language) => ({
+    language,
+    scheme: 'file',
+    pattern: this.drupalWorkspace.getRelativePattern('**'),
+  }));
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
     super(arg);
 
-    this.docSelector = {
-      language: PHPCBFProvider.language,
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
-    };
-
     this.disposables.push(
-      languages.registerDocumentFormattingEditProvider(this.docSelector, this)
+      languages.registerDocumentFormattingEditProvider(
+        this.documentFilters,
+        this
+      )
     );
+
+    this.extensions = pack.contributes.languages
+      .map((lang: { id: string; extensions: string[] }) =>
+        lang.extensions.map((item) => item.substring(1)).join(',')
+      )
+      .join(',');
   }
 
   async provideDocumentFormattingEdits(
@@ -65,7 +73,7 @@ export default class PHPCBFProvider
         ...config.get('args', []),
         '-q',
         `--stdin-path=${filePath}`,
-        `--extensions=${extname(filePath).slice(1)}/php`,
+        `--extensions=${this.extensions}`,
         '-',
       ];
 
