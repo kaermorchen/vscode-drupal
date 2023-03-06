@@ -6,10 +6,10 @@ import {
   languages,
   Position,
   Range,
-  SnippetString,
   TextDocument,
   Uri,
   workspace,
+  SnippetString,
 } from 'vscode';
 import gettextParser from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
@@ -19,7 +19,7 @@ const prefixes: Map<string, string[]> = new Map([
   ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
   ['javascript', ['Drupal.t(']],
   ['yaml', ['_title: ', 'title: ']],
-  ['twig', ['{{ ', '{{']],
+  ['twig', ['{{', '{%']],
 ]);
 
 export default class TranslationProvider
@@ -114,11 +114,46 @@ export default class TranslationProvider
         .text.substring(0, position.character);
       const langPrefixes = prefixes.get(document.languageId) ?? [];
 
-      if (langPrefixes.some((item) => linePrefix.includes(item))) {
-        return this.moduleCompletions.get(moduleUri.fsPath);
+      if (!langPrefixes.some((item) => linePrefix.includes(item))) {
+        return;
       }
-    }
 
-    return [];
+      const completions = this.moduleCompletions.get(moduleUri.fsPath);
+
+      if (document.languageId === 'twig') {
+        const range =
+          document.getWordRangeAtPosition(position) ??
+          new Range(position, position);
+        const rangeWithQuotationMark = new Range(
+          range.start,
+          range.end.translate({ characterDelta: 1 })
+        );
+        const quotationMark = document.getText(
+          new Range(range.start.translate({ characterDelta: -1 }), range.start)
+        );
+
+        return completions?.map((item) => {
+          const label =
+            typeof item.label === 'string' ? item.label : item.label.label;
+          const variables = label.match(/[@%:]\w+/g);
+          const tArgs = variables
+            ? `({${variables
+                .map((item, i) => `"${item}": $${i + 1}`)
+                .join(', ')}})`
+            : '';
+          item.insertText = new SnippetString(
+            `${item.label}${quotationMark}|t${tArgs}`
+          );
+          item.range = {
+            inserting: rangeWithQuotationMark,
+            replacing: rangeWithQuotationMark,
+          };
+
+          return item;
+        });
+      }
+
+      return completions;
+    }
   }
 }
