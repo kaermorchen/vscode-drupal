@@ -16,7 +16,7 @@ import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provide
 import getModuleUri from '../utils/get-module-uri';
 
 const prefixes: Map<string, string[]> = new Map([
-  ['php', ['$this->t(', ' t(', 'formatPlural(', 'TranslatableMarkup(']],
+  ['php', ['$this->t(', ' t(', 'TranslatableMarkup(']],
   ['javascript', ['Drupal.t(']],
   ['yaml', ['_title: ', 'title: ']],
   ['twig', ['{{', '{%']],
@@ -120,40 +120,91 @@ export default class TranslationProvider
 
       const completions = this.moduleCompletions.get(moduleUri.fsPath);
 
-      if (document.languageId === 'twig') {
-        const range =
-          document.getWordRangeAtPosition(position) ??
-          new Range(position, position);
-        const rangeWithQuotationMark = new Range(
-          range.start,
-          range.end.translate({ characterDelta: 1 })
-        );
-        const quotationMark = document.getText(
-          new Range(range.start.translate({ characterDelta: -1 }), range.start)
-        );
-
-        return completions?.map((item) => {
-          const label =
-            typeof item.label === 'string' ? item.label : item.label.label;
-          const variables = label.match(/[@%:]\w+/g);
-          const tArgs = variables
-            ? `({${variables
-                .map((item, i) => `"${item}": $${i + 1}`)
-                .join(', ')}})`
-            : '';
-          item.insertText = new SnippetString(
-            `${item.label}${quotationMark}|t${tArgs}`
-          );
-          item.range = {
-            inserting: rangeWithQuotationMark,
-            replacing: rangeWithQuotationMark,
-          };
-
-          return item;
-        });
+      switch (document.languageId) {
+        case 'twig':
+          return this.twigCompletionItems(document, position, completions);
+        case 'php':
+          return this.phpCompletionItems(document, position, completions);
       }
 
       return completions;
     }
+  }
+
+  phpCompletionItems(
+    document: TextDocument,
+    position: Position,
+    completions: CompletionItem[] | undefined
+  ): CompletionItem[] | undefined {
+    const range = this.getWordRange(document, position);
+    const rangeWithQuotationMark = this.getRangeWithNextCharacters(range, 2);
+    const quotationMark = this.getQuotationMark(document, range);
+
+    return completions?.map((item) => {
+      const label =
+        typeof item.label === 'string' ? item.label : item.label.label;
+      const variables = this.getTranslateArgVariables(label);
+      const tArgs = variables
+        ? `, [${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}]`
+        : '';
+      item.insertText = new SnippetString(
+        `${item.label}${quotationMark}${tArgs})$0`
+      );
+      item.range = {
+        inserting: rangeWithQuotationMark,
+        replacing: rangeWithQuotationMark,
+      };
+
+      return item;
+    });
+  }
+
+  twigCompletionItems(
+    document: TextDocument,
+    position: Position,
+    completions: CompletionItem[] | undefined
+  ): CompletionItem[] | undefined {
+    const range = this.getWordRange(document, position);
+    const rangeWithQuotationMark = this.getRangeWithNextCharacters(range);
+    const quotationMark = this.getQuotationMark(document, range);
+
+    return completions?.map((item) => {
+      const label =
+        typeof item.label === 'string' ? item.label : item.label.label;
+      const variables = label.match(/[@%:]\w+/g);
+      const tArgs = variables
+        ? `({${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}})`
+        : '';
+
+      item.insertText = new SnippetString(
+        `${item.label}${quotationMark}|t${tArgs}`
+      );
+      item.range = {
+        inserting: rangeWithQuotationMark,
+        replacing: rangeWithQuotationMark,
+      };
+
+      return item;
+    });
+  }
+
+  getWordRange(document: TextDocument, position: Position): Range {
+    return (
+      document.getWordRangeAtPosition(position) ?? new Range(position, position)
+    );
+  }
+
+  getRangeWithNextCharacters(range: Range, characterDelta = 1): Range {
+    return new Range(range.start, range.end.translate({ characterDelta }));
+  }
+
+  getQuotationMark(document: TextDocument, range: Range): string {
+    return document.getText(
+      new Range(range.start.translate({ characterDelta: -1 }), range.start)
+    );
+  }
+
+  getTranslateArgVariables(label: string): string[] | null {
+    return label.match(/[@%:]\w+/g);
   }
 }
