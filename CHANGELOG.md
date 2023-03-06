@@ -1,3 +1,11 @@
+## v0.4.0 (2023-03-06)
+
+#### :rocket: Enhancement
+* [#17](https://github.com/kaermorchen/vscode-drupal/pull/17) Added translation arguments ([@kaermorchen](https://github.com/kaermorchen))
+
+#### Committers: 1
+- Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
+
 ## v0.3.0 (2023-03-05)
 
 #### :rocket: Enhancement
