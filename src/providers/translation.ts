@@ -125,6 +125,8 @@ export default class TranslationProvider
           return this.twigCompletionItems(document, position, completions);
         case 'php':
           return this.phpCompletionItems(document, position, completions);
+        case 'javascript':
+          return this.jsCompletionItems(document, position, completions);
       }
 
       return completions;
@@ -171,13 +173,42 @@ export default class TranslationProvider
     return completions?.map((item) => {
       const label =
         typeof item.label === 'string' ? item.label : item.label.label;
-      const variables = label.match(/[@%:]\w+/g);
+      const variables = this.getTranslateArgVariables(label);
       const tArgs = variables
         ? `({${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}})`
         : '';
 
       item.insertText = new SnippetString(
         `${item.label}${quotationMark}|t${tArgs}`
+      );
+      item.range = {
+        inserting: rangeWithQuotationMark,
+        replacing: rangeWithQuotationMark,
+      };
+
+      return item;
+    });
+  }
+
+  jsCompletionItems(
+    document: TextDocument,
+    position: Position,
+    completions: CompletionItem[] | undefined
+  ): CompletionItem[] | undefined {
+    const range = this.getWordRange(document, position);
+    const rangeWithQuotationMark = this.getRangeWithNextCharacters(range, 2);
+    const quotationMark = this.getQuotationMark(document, range);
+
+    return completions?.map((item) => {
+      const label =
+        typeof item.label === 'string' ? item.label : item.label.label;
+      const variables = this.getTranslateArgVariables(label);
+      const tArgs = variables
+        ? `, {${variables.map((item, i) => `'${item}': $${i + 1}`).join(', ')}}`
+        : '';
+
+      item.insertText = new SnippetString(
+        `${item.label}${quotationMark}${tArgs})$0`
       );
       item.range = {
         inserting: rangeWithQuotationMark,
