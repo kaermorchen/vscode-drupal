@@ -1,3 +1,12 @@
+
+## v0.4.2 (2023-03-13)
+
+#### :bug: Bug Fix
+* [#18](https://github.com/kaermorchen/vscode-drupal/pull/18) Add when clause context for search command ([@kaermorchen](https://github.com/kaermorchen))
+
+#### Committers: 1
+- Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
+
 ## v0.4.1 (2023-03-06)
 
 ## v0.4.0 (2023-03-06)

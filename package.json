@@ -2,7 +2,7 @@
   "name": "vscode-drupal",
   "displayName": "Drupal",
   "description": "A Drupal extension for VS Code",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "stanislav",
   "repository": "https://github.com/kaermorchen/vscode-drupal",
   "author": "Stanislav Romanov <kaermorchen@gmail.com>",
