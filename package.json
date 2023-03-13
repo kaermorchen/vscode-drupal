@@ -87,6 +87,7 @@
     "menus": {
       "editor/context": [
         {
+          "when": "drupal.fileIsInDrupalWorkspace",
           "command": "drupal.search-api"
         }
       ]

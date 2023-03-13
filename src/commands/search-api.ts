@@ -1,4 +1,12 @@
-import { env, TextEditor, Uri, workspace } from 'vscode';
+import {
+  commands,
+  env,
+  TextEditor,
+  Uri,
+  window,
+  workspace,
+  WorkspaceFolder,
+} from 'vscode';
 import DrupalWorkspace from '../base/drupal-workspace';
 import TextEditorCommand from './text-editor-command';
 
@@ -11,6 +19,14 @@ export default class SearchApi extends TextEditorCommand {
     super();
 
     this.drupalWorkspaces = drupalWorkspaces;
+
+    window.onDidChangeActiveTextEditor(
+      this.onActiveEditorChanged,
+      this,
+      this.disposables
+    );
+
+    this.onActiveEditorChanged();
   }
 
   async callback(editor: TextEditor) {
@@ -19,9 +35,7 @@ export default class SearchApi extends TextEditorCommand {
       : editor.selection;
     const selectedText = editor.document.getText(position);
     const workspaceFodler = workspace.getWorkspaceFolder(editor.document.uri);
-    const drupalWorkspace = this.drupalWorkspaces.find(
-      (item) => item.workspaceFolder === workspaceFodler
-    );
+    const drupalWorkspace = this.getDrupalWorkspace(workspaceFodler);
     let version = 10;
 
     if (drupalWorkspace) {
@@ -33,5 +47,33 @@ export default class SearchApi extends TextEditorCommand {
     );
 
     env.openExternal(uri);
+  }
+
+  getDrupalWorkspace(workspaceFodler?: WorkspaceFolder) {
+    return workspaceFodler
+      ? this.drupalWorkspaces.find(
+          (item) => item.workspaceFolder === workspaceFodler
+        )
+      : undefined;
+  }
+
+  onActiveEditorChanged() {
+    let fileIsInDrupalWorkspace = false;
+
+    if (window.activeTextEditor) {
+      const workspaceFodler = workspace.getWorkspaceFolder(
+        window.activeTextEditor.document.uri
+      );
+
+      fileIsInDrupalWorkspace = Boolean(
+        this.getDrupalWorkspace(workspaceFodler)
+      );
+    }
+
+    commands.executeCommand(
+      'setContext',
+      'drupal.fileIsInDrupalWorkspace',
+      fileIsInDrupalWorkspace
+    );
   }
 }
