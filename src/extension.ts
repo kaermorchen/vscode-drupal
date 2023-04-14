@@ -5,6 +5,7 @@ import DrupalWorkspace from './base/drupal-workspace';
 import getWorkspaceFolders from './utils/get-workspace-folders';
 import getComposer from './utils/get-composer';
 import SearchApi from './commands/search-api';
+import GenerateTranslations from './commands/generate-translations';
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
@@ -33,6 +34,7 @@ export async function activate(context: ExtensionContext) {
 
     // Commands
     new SearchApi(drupalWorkspaces),
+    new GenerateTranslations(drupalWorkspaces),
     new ShowOutputChannel()
   );
 }

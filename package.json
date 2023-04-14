@@ -82,6 +82,10 @@
       {
         "command": "drupal.search-api",
         "title": "Search Drupal API"
+      },
+      {
+        "command": "drupal.generate-translations",
+        "title": "Generate translations"
       }
     ],
     "menus": {
@@ -89,6 +93,10 @@
         {
           "when": "drupal.fileIsInDrupalWorkspace",
           "command": "drupal.search-api"
+        },
+        {
+          "when": "drupal.fileIsInDrupalModule",
+          "command": "drupal.generate-translations"
         }
       ]
     },
@@ -241,6 +249,7 @@
     "doc-parser": "^0.4.9",
     "gettext-parser": "^6.0.0",
     "php-parser": "^3.1.2",
+    "twig-parser": "file:../twig-parser",
     "vscode-uri": "^3.0.7",
     "yaml": "^2.2.0"
   },

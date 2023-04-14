@@ -22,6 +22,7 @@ const prefixes: Map<string, string[]> = new Map([
   ['twig', ['{{', '{%']],
 ]);
 
+
 export default class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
