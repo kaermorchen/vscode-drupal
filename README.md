@@ -8,14 +8,14 @@ This extension supports only Drupal projects which use composer template [drupal
 - twig completion
 - service completion
 - global variables completion
-- code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) (used [phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
-- document formatting by standards (used [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer))
+- code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) ([phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
+- document formatting by standards ([phpcbf](https://github.com/squizlabs/PHP_CodeSniffer))
 - searching in Drupal API Documentation
-- translation autocomplete (php, twig, yml, js)
+- translation autocomplete (php, twig, js)
 - validation and autocomplete for YAML files
 
 ## Experimental features
-- PHPStan analysis (used [PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal))
+- PHPStan analysis ([PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal))
 
 The experimental features turned off by default. But you can turn them on in the extension settings.
 
@@ -46,7 +46,14 @@ For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=r
 ![phpcs](https://user-images.githubusercontent.com/11972062/221161739-cabcd4b5-800d-4d5b-8071-9324bf2bcc08.gif)
 
 ### Translation autocomplete
-![translates](https://user-images.githubusercontent.com/11972062/221161829-1e1deaf4-873c-4325-b937-2206b83af349.gif)
+The extension parse *.po files inside a module direcory and autocomplete strings
+#### PHP
+![t](https://user-images.githubusercontent.com/11972062/232210075-e013c835-bd59-425f-bcce-1e2282f98c6d.gif)
+![markup](https://user-images.githubusercontent.com/11972062/232210084-2e57b11e-dbda-4e7f-85c3-c994465ce4d9.gif)
+#### Twig
+![twig](https://user-images.githubusercontent.com/11972062/232210091-b00d0055-a7ff-4b5a-8b5d-774f31900105.gif)
+#### JavaScript
+![js](https://user-images.githubusercontent.com/11972062/232210100-9a2b3d63-5d9d-4fb7-ac58-9b1980002eaa.gif)
 
 ### Drupal Search API
 ![search](https://user-images.githubusercontent.com/11972062/221161916-4b470ae6-49ce-4093-a3b4-8299de2f342a.gif)
