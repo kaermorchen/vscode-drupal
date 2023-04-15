@@ -50,9 +50,18 @@ export default class GenerateTranslations extends TextEditorCommand {
     }
 
     const pattern = new RelativePattern(moduleUri, '**/*.html.twig');
-
     const uris = await drupalWorkspace.findFiles(pattern);
-    console.log(uris);
+
+    for (const uri of uris) {
+      const buffer = await workspace.fs.readFile(uri);
+      const { tokens } = this.twigLexer.tokenize(buffer.toString());
+
+      this.twigParser.input = tokens;
+
+      const ast = this.twigParser.Template();
+
+      // TODO: walk ast
+    }
   }
 
   getDrupalWorkspace(workspaceFodler?: WorkspaceFolder) {
