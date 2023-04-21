@@ -11,13 +11,10 @@ import {
 import DrupalWorkspace from '../base/drupal-workspace';
 import TextEditorCommand from './text-editor-command';
 import getModuleUri from '../utils/get-module-uri';
-import { TwigLexer, TwigParser } from 'twig-parser';
+import { parse, walk } from 'twig-parser';
 
 export default class GenerateTranslations extends TextEditorCommand {
   static id = 'drupal.generate-translations';
-
-  twigLexer = new TwigLexer();
-  twigParser = new TwigParser();
 
   drupalWorkspaces: DrupalWorkspace[];
 
@@ -54,13 +51,26 @@ export default class GenerateTranslations extends TextEditorCommand {
 
     for (const uri of uris) {
       const buffer = await workspace.fs.readFile(uri);
-      const { tokens } = this.twigLexer.tokenize(buffer.toString());
+      const { ast } = parse(buffer.toString());
 
-      this.twigParser.input = tokens;
+      walk(ast, (node) => {
+        let translate = '';
 
-      const ast = this.twigParser.Template();
-
-      // TODO: walk ast
+        if (node.type === 'TransStatement') {
+          for (const item of node.body) {
+            switch (item.type) {
+              case 'Text':
+                translate = translate.concat(item.value);
+                break;
+              case 'VariableStatement':
+                if (item.value.type === 'Identifier') {
+                  translate = translate.concat(`@${item.value.name}`);
+                }
+                break;
+            }
+          }
+        }
+      });
     }
   }
 
