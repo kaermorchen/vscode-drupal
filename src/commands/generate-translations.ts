@@ -11,7 +11,15 @@ import {
 import DrupalWorkspace from '../base/drupal-workspace';
 import TextEditorCommand from './text-editor-command';
 import getModuleUri from '../utils/get-module-uri';
-import { parse, walk } from 'twig-parser';
+import {
+  isOfType,
+  NodeKind,
+  parse,
+  Text,
+  TransStatement,
+  VariableStatement,
+  walk,
+} from 'twig-parser';
 
 export default class GenerateTranslations extends TextEditorCommand {
   static id = 'drupal.generate-translations';
@@ -56,14 +64,14 @@ export default class GenerateTranslations extends TextEditorCommand {
       walk(ast, (node) => {
         let translate = '';
 
-        if (node.type === 'TransStatement') {
+        if (isOfType<TransStatement>(node, NodeKind.TransStatement)) {
           for (const item of node.body) {
             switch (item.type) {
-              case 'Text':
+              case NodeKind.Text:
                 translate = translate.concat(item.value);
                 break;
-              case 'VariableStatement':
-                if (item.value.type === 'Identifier') {
+              case NodeKind.VariableStatement:
+                if (item.value.type === NodeKind.Identifier) {
                   translate = translate.concat(`@${item.value.name}`);
                 }
                 break;
