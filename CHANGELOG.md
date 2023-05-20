@@ -1,3 +1,15 @@
+
+## v0.4.4 (2023-05-20)
+
+#### :rocket: Enhancement
+* [#21](https://github.com/kaermorchen/vscode-drupal/pull/21) Add preselect for hook CompletionItem ([@kaermorchen](https://github.com/kaermorchen))
+
+#### :bug: Bug Fix
+* [#22](https://github.com/kaermorchen/vscode-drupal/pull/22) Fix lost formatting code ([@kaermorchen](https://github.com/kaermorchen))
+
+#### Committers: 1
+- Stanislav Romanov ([@kaermorchen](https://github.com/kaermorchen))
+
 ## v0.4.3 (2023-04-15)
 
 ## v0.4.2 (2023-03-13)
