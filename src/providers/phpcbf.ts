@@ -80,13 +80,16 @@ export default class PHPCBFProvider
       // TODO: add abort signal
       const process = spawn(executablePath, args, spawnOptions);
       const originalText = document.getText();
+      let formattedText = '';
 
       process.stdin.write(originalText);
       process.stdin.end();
 
       process.stdout.on('data', (data) => {
-        const formattedText = data.toString();
+        formattedText += data.toString();
+      });
 
+      process.on('close', () => {
         if (originalText === formattedText) {
           resolve([]);
         } else {
