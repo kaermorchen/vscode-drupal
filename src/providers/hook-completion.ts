@@ -80,6 +80,7 @@ export default class HookCompletionProvider
           insertText: new SnippetString(
             `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`
           ),
+          preselect: true,
         };
 
         const lastComment = item.leadingComments?.pop();
