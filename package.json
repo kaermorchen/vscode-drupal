@@ -242,7 +242,7 @@
     "gettext-parser": "^6.0.0",
     "php-parser": "^3.1.2",
     "vscode-uri": "^3.0.7",
-    "yaml": "^2.2.0"
+    "yaml": "^2.2.2"
   },
   "release-it": {
     "plugins": {
