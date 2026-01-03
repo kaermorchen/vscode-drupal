@@ -5,13 +5,14 @@
       "name": "Extension",
       "type": "extensionHost",
       "request": "launch",
+      "preLaunchTask": "${defaultBuildTask}",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extensions",
       ],
       "outFiles": [
         "${workspaceFolder}/out/extension.js",
       ],
-      "preLaunchTask": "npm: esbuild-watch"
     },
   ]
 }
