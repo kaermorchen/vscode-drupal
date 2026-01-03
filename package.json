@@ -229,7 +229,7 @@
     "@release-it-plugins/lerna-changelog": "^8.0.1",
     "@types/gettext-parser": "^8.0.0",
     "@types/node": "^25.0.3",
-    "@types/vscode": "^1.107.0",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^8.51.0",
     "@typescript-eslint/parser": "^8.51.0",
     "esbuild": "^0.27.2",
