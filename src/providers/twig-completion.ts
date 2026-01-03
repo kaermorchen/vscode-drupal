@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 import { Class as ASTClass, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
-import docParser from '../utils/doc-parser';
+import { parsePHPDocSummary } from '../utils/doc-parser';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
 import getName from '../utils/get-name';
 import { CompletionItemWithCallback } from '../types';
@@ -215,9 +215,7 @@ export default class TwigCompletionProvider
           const lastComment = item.leadingComments?.pop();
 
           if (lastComment) {
-            const ast = docParser.parse(lastComment.value);
-
-            return ast.summary;
+            return parsePHPDocSummary(lastComment.value);
           }
 
           return;

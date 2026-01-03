@@ -11,7 +11,7 @@ import {
 } from 'vscode';
 import { Function as ASTFunction } from 'php-parser';
 import getModuleMachineName from '../utils/get-module-machine-name';
-import docParser from '../utils/doc-parser';
+import { parsePHPDocSummary } from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import getName from '../utils/get-name';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
@@ -41,7 +41,9 @@ export default class HookCompletionProvider
         {
           language: HookCompletionProvider.language,
           scheme: 'file',
-          pattern: this.drupalWorkspace.getRelativePattern('**/*.{module,theme}'),
+          pattern: this.drupalWorkspace.getRelativePattern(
+            '**/*.{module,theme}'
+          ),
         },
         this
       )
@@ -90,16 +92,19 @@ export default class HookCompletionProvider
             // Replace full import to last part
             item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
           );
-          const ast = docParser.parse(lastComment.value);
-          const value = [
-            '```php',
-            '<?php', //TODO: remove when vscode will support php syntax highlighting without this
-            `function ${name}(${args.join(', ')}) {}`,
-            '```',
-            ast.summary,
-          ].join('\n');
+          const summary = parsePHPDocSummary(lastComment.value);
 
-          completion.documentation = new MarkdownString(value);
+          if (summary) {
+            const value = [
+              '```php',
+              '<?php', //TODO: remove when vscode will support php syntax highlighting without this
+              `function ${name}(${args.join(', ')}) {}`,
+              '```',
+              summary,
+            ].join('\n');
+
+            completion.documentation = new MarkdownString(value);
+          }
         }
 
         completions.push(completion);
