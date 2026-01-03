@@ -8,7 +8,7 @@ import {
   workspace,
 } from 'vscode';
 import { Global } from 'php-parser';
-import docParser from '../utils/doc-parser';
+import { parsePHPDoc, parsePHPDocSummary } from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 
@@ -20,7 +20,9 @@ export default class GlobalVariablesCompletionProvider
 
   completions: CompletionItem[] = [];
 
-  constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]) {
+  constructor(
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+  ) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
@@ -71,9 +73,11 @@ export default class GlobalVariablesCompletionProvider
         const lastComment = item.leadingComments?.pop();
 
         if (lastComment) {
-          const ast = docParser.parse(lastComment.value);
+          const summary = parsePHPDocSummary(lastComment.value);
 
-          completion.documentation = new MarkdownString(ast.summary);
+          if (summary) {
+            completion.documentation = new MarkdownString(summary);
+          }
         }
 
         this.completions.push(completion);
