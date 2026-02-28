@@ -20,6 +20,6 @@
     "node_modules",
     "out",
     ".vscode-test",
-    "**/*.test.ts"
+    "**/*.test.*"
   ]
 }
