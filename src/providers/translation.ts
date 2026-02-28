@@ -11,7 +11,7 @@ import {
   workspace,
   SnippetString,
 } from 'vscode';
-import gettextParser from 'gettext-parser';
+import { po } from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
 import getModuleUri from '../utils/get-module-uri';
 
@@ -43,7 +43,7 @@ export default class TranslationProvider
       language: 'yaml',
       scheme: 'file',
       pattern: this.drupalWorkspace.getRelativePattern(
-        '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml'
+        '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml',
       ),
     },
     {
@@ -54,14 +54,14 @@ export default class TranslationProvider
   ];
 
   constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
   ) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 
     this.disposables.push(
-      languages.registerCompletionItemProvider(this.selectors, this, '"', "'")
+      languages.registerCompletionItemProvider(this.selectors, this, '"', "'"),
     );
 
     this.parseFiles();
@@ -85,7 +85,7 @@ export default class TranslationProvider
       }
 
       const buffer = await workspace.fs.readFile(uri);
-      const { translations } = gettextParser.po.parse(buffer.toString());
+      const { translations } = po.parse(buffer.toString());
       const completions: CompletionItem[] =
         this.moduleCompletions.get(moduleUri.fsPath) ?? [];
 
@@ -136,7 +136,7 @@ export default class TranslationProvider
   phpCompletionItems(
     document: TextDocument,
     position: Position,
-    completions: CompletionItem[] | undefined
+    completions: CompletionItem[] | undefined,
   ): CompletionItem[] | undefined {
     const range = this.getWordRange(document, position);
     const rangeWithQuotationMark = this.getRangeWithNextCharacters(range, 2);
@@ -150,7 +150,7 @@ export default class TranslationProvider
         ? `, [${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}]`
         : '';
       item.insertText = new SnippetString(
-        `${item.label}${quotationMark}${tArgs})$0`
+        `${item.label}${quotationMark}${tArgs})$0`,
       );
       item.range = {
         inserting: rangeWithQuotationMark,
@@ -164,7 +164,7 @@ export default class TranslationProvider
   twigCompletionItems(
     document: TextDocument,
     position: Position,
-    completions: CompletionItem[] | undefined
+    completions: CompletionItem[] | undefined,
   ): CompletionItem[] | undefined {
     const range = this.getWordRange(document, position);
     const rangeWithQuotationMark = this.getRangeWithNextCharacters(range);
@@ -179,7 +179,7 @@ export default class TranslationProvider
         : '';
 
       item.insertText = new SnippetString(
-        `${item.label}${quotationMark}|t${tArgs}`
+        `${item.label}${quotationMark}|t${tArgs}`,
       );
       item.range = {
         inserting: rangeWithQuotationMark,
@@ -193,7 +193,7 @@ export default class TranslationProvider
   jsCompletionItems(
     document: TextDocument,
     position: Position,
-    completions: CompletionItem[] | undefined
+    completions: CompletionItem[] | undefined,
   ): CompletionItem[] | undefined {
     const range = this.getWordRange(document, position);
     const rangeWithQuotationMark = this.getRangeWithNextCharacters(range, 2);
@@ -208,7 +208,7 @@ export default class TranslationProvider
         : '';
 
       item.insertText = new SnippetString(
-        `${item.label}${quotationMark}${tArgs})$0`
+        `${item.label}${quotationMark}${tArgs})$0`,
       );
       item.range = {
         inserting: rangeWithQuotationMark,
@@ -231,7 +231,7 @@ export default class TranslationProvider
 
   getQuotationMark(document: TextDocument, range: Range): string {
     return document.getText(
-      new Range(range.start.translate({ characterDelta: -1 }), range.start)
+      new Range(range.start.translate({ characterDelta: -1 }), range.start),
     );
   }
 
