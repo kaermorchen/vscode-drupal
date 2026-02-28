@@ -9,6 +9,7 @@
   "engines": {
     "vscode": "^1.100.0"
   },
+  "type": "module",
   "keywords": [
     "Drupal"
   ],
@@ -222,7 +223,11 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ -w",
-    "release": "release-it"
+    "release": "release-it",
+    "test": "mocha",
+    "test:unit": "mocha test/unit/**/*.test.ts",
+    "test:unit:watch": "mocha test/unit/**/*.test.ts --watch",
+    "test:e2e": "vscode-test"
   },
   "devDependencies": {
     "@release-it-plugins/lerna-changelog": "^8.0.1",
@@ -231,8 +236,11 @@
     "@types/vscode": "1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
     "eslint": "^10.0.2",
     "release-it": "^19.2.4",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
