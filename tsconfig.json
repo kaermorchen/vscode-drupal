@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "target": "es2022",
+    "module": "commonjs",
+    "target": "ES2024",
     "lib": [
-      "es2022"
+      "ES2024"
     ],
     "outDir": "out",
     "sourceMap": true,
     "strict": true,
-    "rootDir": "src"
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "src"
@@ -17,5 +19,5 @@
     "node_modules",
     "out",
     ".vscode-test"
-  ],
+  ]
 }
