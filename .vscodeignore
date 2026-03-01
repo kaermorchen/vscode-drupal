@@ -8,3 +8,5 @@
 !package.json
 !README.md
 !LICENSE.md
+
+out/**/*.test.*

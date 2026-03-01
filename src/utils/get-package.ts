@@ -1,13 +1,12 @@
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import { extensions } from 'vscode';
 
-export default function getPackage() {
+export function getPackage() {
   const extension = extensions.getExtension('stanislav.vscode-drupal');
-  console.log(extension?.packageJSON);
+  const packageJSON = extension?.packageJSON;
 
-  return extension?.packageJSON;
-  // const pack = readFileSync(resolve(__dirname, '../../package.json'), 'utf8');
+  if (!packageJSON) {
+    throw new Error('Extension package.json not found');
+  }
 
-  // return JSON.parse(pack);
+  return packageJSON;
 }

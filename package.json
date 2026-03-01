@@ -28,7 +28,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ -w",
     "release": "release-it",
-    "test": "vscode-test",
+    "test": "npm run compile && vscode-test",
     "test:watch": "mocha src/**/*.test.ts --watch",
     "test:e2e": "vscode-test"
   },

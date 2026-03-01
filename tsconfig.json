@@ -11,7 +11,8 @@
     "types": [
       "node",
       "mocha"
-    ]
+    ],
+    "esModuleInterop": true,
   },
   "include": [
     "src"
@@ -20,6 +21,5 @@
     "node_modules",
     "out",
     ".vscode-test",
-    "**/*.test.*"
   ]
 }

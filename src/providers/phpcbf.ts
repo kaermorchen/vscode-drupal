@@ -11,7 +11,7 @@ import {
   DocumentFilter,
 } from 'vscode';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import getPackage from '../utils/get-package';
+import { getPackage } from '../utils/get-package';
 
 const pack = getPackage();
 
@@ -32,13 +32,13 @@ export default class PHPCBFProvider
     this.disposables.push(
       languages.registerDocumentFormattingEditProvider(
         this.documentFilters,
-        this
-      )
+        this,
+      ),
     );
 
     this.extensions = pack.contributes.languages
       .map((lang: { id: string; extensions: string[] }) =>
-        lang.extensions.map((item) => item.substring(1)).join(',')
+        lang.extensions.map((item) => item.substring(1)).join(','),
       )
       .join(',');
   }
@@ -46,7 +46,7 @@ export default class PHPCBFProvider
   async provideDocumentFormattingEdits(
     document: TextDocument,
     options: FormattingOptions,
-    token: CancellationToken
+    token: CancellationToken,
   ): Promise<TextEdit[]> {
     const config = this.config;
 
@@ -59,7 +59,7 @@ export default class PHPCBFProvider
     if (executablePath === '') {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpcbf'
+        'vendor/bin/phpcbf',
       ).fsPath;
     }
 
@@ -95,7 +95,7 @@ export default class PHPCBFProvider
         } else {
           const range = new Range(
             document.positionAt(0),
-            document.positionAt(originalText.length)
+            document.positionAt(originalText.length),
           );
 
           resolve([new TextEdit(range, formattedText)]);

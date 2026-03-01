@@ -12,7 +12,7 @@ import {
   DocumentFilter,
 } from 'vscode';
 import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import getPackage from '../utils/get-package';
+import { getPackage } from '../utils/get-package';
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -49,7 +49,7 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
 
     this.extensions = pack.contributes.languages
       .map((lang: { id: string; extensions: string[] }) =>
-        lang.extensions.map((item) => item.substring(1)).join(',')
+        lang.extensions.map((item) => item.substring(1)).join(','),
       )
       .join(',');
 
@@ -64,19 +64,19 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
         }
       },
       this,
-      this.disposables
+      this.disposables,
     );
 
     workspace.onDidChangeTextDocument(
       (e) => this.validate(e.document),
       this,
-      this.disposables
+      this.disposables,
     );
 
     workspace.onDidCloseTextDocument(
       this.clearDiagnostics,
       this,
-      this.disposables
+      this.disposables,
     );
   }
 
@@ -102,7 +102,7 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
     if (executablePath === '') {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpcs'
+        'vendor/bin/phpcs',
       ).fsPath;
     }
 
@@ -141,7 +141,7 @@ export default class PHPCSProvider extends DrupalWorkspaceProvider {
             source: this.source,
             range: new Range(
               new Position(line, character),
-              new Position(line, character)
+              new Position(line, character),
             ),
           });
         });
