@@ -13,7 +13,7 @@ import {
 } from 'vscode';
 import { po } from 'gettext-parser';
 import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
-import getModuleUri from '../utils/get-module-uri';
+import { getModuleUri } from '../utils/get-module-uri';
 
 const prefixes: Map<string, string[]> = new Map([
   ['php', ['$this->t(', ' t(', 'TranslatableMarkup(']],
@@ -78,7 +78,7 @@ export default class TranslationProvider
       : await this.drupalWorkspace.findFiles(this.pattern);
 
     for (const uri of uris) {
-      const moduleUri = await getModuleUri(uri);
+      const moduleUri = getModuleUri(uri);
 
       if (!moduleUri) {
         continue;
@@ -106,7 +106,7 @@ export default class TranslationProvider
   }
 
   async provideCompletionItems(document: TextDocument, position: Position) {
-    const moduleUri = await getModuleUri(document.uri);
+    const moduleUri = getModuleUri(document.uri);
 
     if (moduleUri) {
       const linePrefix = document

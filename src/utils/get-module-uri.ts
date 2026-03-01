@@ -1,6 +1,6 @@
 import { Uri } from 'vscode';
 
-export default async function getModuleUri(uri: Uri): Promise<Uri | undefined> {
+export function getModuleUri(uri: Uri): Uri | undefined {
   const result = uri.fsPath.match(/.*\/web\/modules\/custom\/\w+/);
 
   if (result) {
