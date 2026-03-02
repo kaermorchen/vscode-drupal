@@ -12,7 +12,7 @@ import {
   SnippetString,
 } from 'vscode';
 import { po } from 'gettext-parser';
-import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
 import { getModuleUri } from '../utils/get-module-uri';
 
 const prefixes: Map<string, string[]> = new Map([
@@ -22,7 +22,7 @@ const prefixes: Map<string, string[]> = new Map([
   ['twig', ['{{', '{%']],
 ]);
 
-export default class TranslationProvider
+export class TranslationProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {

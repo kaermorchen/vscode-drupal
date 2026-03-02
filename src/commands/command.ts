@@ -1,9 +1,9 @@
 import { commands } from 'vscode';
-import Disposable from '../base/disposable';
+import { Disposable } from '../base/disposable';
 
 type cb = Parameters<typeof commands.registerCommand>[1];
 
-export default abstract class Command extends Disposable {
+export abstract class Command extends Disposable {
   static id: string;
 
   constructor() {

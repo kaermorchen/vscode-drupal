@@ -1,13 +1,8 @@
-import Disposable from './disposable';
-import {
-  FileSystemWatcher,
-  RelativePattern,
-  workspace,
-  WorkspaceConfiguration,
-} from 'vscode';
-import DrupalWorkspace from './drupal-workspace';
+import { Disposable } from './disposable';
+import { workspace, WorkspaceConfiguration } from 'vscode';
+import { DrupalWorkspace } from './drupal-workspace';
 
-export default class DrupalWorkspaceProvider extends Disposable {
+export class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;
 
   constructor(arg: { drupalWorkspace: DrupalWorkspace }) {

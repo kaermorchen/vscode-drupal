@@ -10,12 +10,12 @@ import {
   Uri,
   DocumentFilter,
 } from 'vscode';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
 import { getPackage } from '../utils/get-package';
 
 const pack = getPackage();
 
-export default class PHPCBFProvider
+export class PHPCBFProvider
   extends DrupalWorkspaceProvider
   implements DocumentFormattingEditProvider
 {

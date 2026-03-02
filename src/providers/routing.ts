@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 import { basename } from 'path';
 import { parse } from 'yaml';
-import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
 
 const prefixes = [
   /Link::createFromRoute\(['"].*['"], ['"]$/,
@@ -18,7 +18,7 @@ const prefixes = [
   /new Url\(['"]$/,
 ];
 
-export default class RoutingCompletionProvider
+export class RoutingCompletionProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
@@ -28,7 +28,7 @@ export default class RoutingCompletionProvider
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
   constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
   ) {
     super(arg);
 
@@ -43,8 +43,8 @@ export default class RoutingCompletionProvider
         },
         this,
         '"',
-        "'"
-      )
+        "'",
+      ),
     );
 
     this.parseFiles();
@@ -73,7 +73,7 @@ export default class RoutingCompletionProvider
     }
 
     this.completions = ([] as CompletionItem[]).concat(
-      ...this.completionFileCache.values()
+      ...this.completionFileCache.values(),
     );
   }
 

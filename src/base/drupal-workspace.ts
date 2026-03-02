@@ -6,20 +6,20 @@ import {
   workspace,
   WorkspaceFolder,
 } from 'vscode';
-import Disposable from './disposable';
-import GlobalVariablesCompletionProvider from '../providers/global-variables';
-import HookCompletionProvider from '../providers/hook-completion';
-import PHPCBFProvider from '../providers/phpcbf';
-import PHPCSProvider from '../providers/phpcs';
-import PHPStanProvider from '../providers/phpstan';
-import RoutingCompletionProvider from '../providers/routing';
-import ServicesCompletionProvider from '../providers/services';
-import TwigCompletionProvider from '../providers/twig-completion';
+import { Disposable } from './disposable';
+import { GlobalVariablesCompletionProvider } from '../providers/global-variables';
+import { HookCompletionProvider } from '../providers/hook-completion';
+import { PHPCBFProvider } from '../providers/phpcbf';
+import { PHPCSProvider } from '../providers/phpcs';
+import { PHPStanProvider } from '../providers/phpstan';
+import { RoutingCompletionProvider } from '../providers/routing';
+import { ServicesCompletionProvider } from '../providers/services';
+import { TwigCompletionProvider } from '../providers/twig-completion';
 import { Tail } from '../types';
-import getComposerLock from '../utils/get-composer-lock';
-import TranslationProvider from '../providers/translation';
+import { getComposerLock } from '../utils/get-composer-lock';
+import { TranslationProvider } from '../providers/translation';
 
-export default class DrupalWorkspace extends Disposable {
+export class DrupalWorkspace extends Disposable {
   workspaceFolder: WorkspaceFolder;
   private drupalVersion?: number;
   private composerLockWatcher: FileSystemWatcher;
@@ -37,26 +37,24 @@ export default class DrupalWorkspace extends Disposable {
       new RoutingCompletionProvider({
         drupalWorkspace: this,
         pattern: this.getRelativePattern(
-          'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml'
+          'web/{core/modules,modules/contrib,modules/custom}/*/*.routing.yml',
         ),
       }),
       new HookCompletionProvider({
         drupalWorkspace: this,
         pattern: this.getRelativePattern(
-          'web/{core,core/modules/*,core/lib/Drupal/Core,modules/contrib/*,modules/custom/*}/*.api.php'
+          'web/{core,core/modules/*,core/lib/Drupal/Core,modules/contrib/*,modules/custom/*}/*.api.php',
         ),
       }),
       new ServicesCompletionProvider({
         drupalWorkspace: this,
         pattern: this.getRelativePattern(
-          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml'
+          'web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml',
         ),
       }),
       new TranslationProvider({
         drupalWorkspace: this,
-        pattern: this.getRelativePattern(
-          'web/modules/custom/**/*.po'
-        ),
+        pattern: this.getRelativePattern('web/modules/custom/**/*.po'),
       }),
       new TwigCompletionProvider({
         drupalWorkspace: this,
@@ -69,11 +67,11 @@ export default class DrupalWorkspace extends Disposable {
       }),
       new PHPStanProvider({
         drupalWorkspace: this,
-      })
+      }),
     );
 
     this.composerLockWatcher = workspace.createFileSystemWatcher(
-      this.getRelativePattern('composer.lock')
+      this.getRelativePattern('composer.lock'),
     );
     this.disposables.push(this.composerLockWatcher);
     this.composerLockWatcher.onDidChange(
@@ -81,7 +79,7 @@ export default class DrupalWorkspace extends Disposable {
         this.drupalVersion = undefined;
       },
       this,
-      this.disposables
+      this.disposables,
     );
   }
 
@@ -101,7 +99,7 @@ export default class DrupalWorkspace extends Disposable {
 
   async findFiles(
     include: GlobPattern,
-    ...args: Tail<Parameters<typeof workspace['findFiles']>>
+    ...args: Tail<Parameters<(typeof workspace)['findFiles']>>
   ) {
     return workspace.findFiles(include, ...args);
   }

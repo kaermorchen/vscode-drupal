@@ -1,9 +1,9 @@
 import { commands } from 'vscode';
-import Command from './command';
+import { Command } from './command';
 
 type cb = Parameters<typeof commands.registerTextEditorCommand>[1];
 
-export default abstract class TextEditorCommand extends Command {
+export abstract class TextEditorCommand extends Command {
   register() {
     const id = (<typeof Command>this.constructor).id;
     const cb = this.callback.bind(this);

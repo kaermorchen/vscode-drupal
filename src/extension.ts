@@ -1,10 +1,10 @@
 import { ExtensionContext } from 'vscode';
-import ShowOutputChannel from './commands/show-output-channel';
-import DrupalStatusBar from './base/drupal-status-bar';
-import DrupalWorkspace from './base/drupal-workspace';
-import getWorkspaceFolders from './utils/get-workspace-folders';
-import getComposer from './utils/get-composer';
-import SearchApi from './commands/search-api';
+import { ShowOutputChannel } from './commands/show-output-channel';
+import { DrupalStatusBar } from './base/drupal-status-bar';
+import { DrupalWorkspace } from './base/drupal-workspace';
+import { getWorkspaceFolders } from './utils/get-workspace-folders';
+import { getComposer } from './utils/get-composer';
+import { SearchApi } from './commands/search-api';
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
@@ -33,7 +33,7 @@ export async function activate(context: ExtensionContext) {
 
     // Commands
     new SearchApi(drupalWorkspaces),
-    new ShowOutputChannel()
+    new ShowOutputChannel(),
   );
 }
 

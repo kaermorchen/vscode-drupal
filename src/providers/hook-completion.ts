@@ -10,17 +10,17 @@ import {
   workspace,
 } from 'vscode';
 import { Function as ASTFunction } from 'php-parser';
-import getModuleMachineName from '../utils/get-module-machine-name';
+import { getModuleMachineName } from '../utils/get-module-machine-name';
 import { parsePHPDocSummary } from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import getName from '../utils/get-name';
-import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+import { getName } from '../utils/get-name';
+import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
 } as const;
 
-export default class HookCompletionProvider
+export class HookCompletionProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
@@ -30,7 +30,7 @@ export default class HookCompletionProvider
   completionFileCache: Map<string, CompletionItem[]> = new Map();
 
   constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
   ) {
     super(arg);
 
@@ -42,11 +42,11 @@ export default class HookCompletionProvider
           language: HookCompletionProvider.language,
           scheme: 'file',
           pattern: this.drupalWorkspace.getRelativePattern(
-            '**/*.{module,theme}'
+            '**/*.{module,theme}',
           ),
         },
-        this
-      )
+        this,
+      ),
     );
 
     this.parseFiles();
@@ -80,7 +80,7 @@ export default class HookCompletionProvider
           kind: NODE_COMPLETION_ITEM[item.kind],
           detail: `Implements ${name}`,
           insertText: new SnippetString(
-            `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`
+            `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`,
           ),
           preselect: true,
         };
@@ -90,7 +90,7 @@ export default class HookCompletionProvider
         if (lastComment) {
           const args = func.arguments.map((item) =>
             // Replace full import to last part
-            item.loc?.source?.replace(/^(\\(\w+))+/, '$2')
+            item.loc?.source?.replace(/^(\\(\w+))+/, '$2'),
           );
           const summary = parsePHPDocSummary(lastComment.value);
 
@@ -114,7 +114,7 @@ export default class HookCompletionProvider
     }
 
     this.completions = ([] as CompletionItem[]).concat(
-      ...this.completionFileCache.values()
+      ...this.completionFileCache.values(),
     );
   }
 
@@ -132,13 +132,13 @@ export default class HookCompletionProvider
 
       if (newItem.insertText instanceof SnippetString) {
         newItem.insertText = new SnippetString(
-          newItem.insertText.value.replace(searchValue, replaceValue)
+          newItem.insertText.value.replace(searchValue, replaceValue),
         );
       }
 
       if (newItem.documentation instanceof MarkdownString) {
         newItem.documentation = new MarkdownString(
-          newItem.documentation.value.replace(searchValue, replaceValue)
+          newItem.documentation.value.replace(searchValue, replaceValue),
         );
       }
 

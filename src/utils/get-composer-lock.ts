@@ -1,6 +1,6 @@
 import { RelativePattern, workspace, WorkspaceFolder } from 'vscode';
 
-export default async function getComposerLock(workspaceFolder: WorkspaceFolder) {
+export async function getComposerLock(workspaceFolder: WorkspaceFolder) {
   const include = new RelativePattern(workspaceFolder, 'composer.lock');
   const composerUri = await workspace.findFiles(include, undefined, 1);
 

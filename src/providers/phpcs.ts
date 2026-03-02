@@ -11,7 +11,7 @@ import {
   Uri,
   DocumentFilter,
 } from 'vscode';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
 import { getPackage } from '../utils/get-package';
 
 const LINTER_MESSAGE_TYPE = {
@@ -33,7 +33,7 @@ interface LinterMessage {
 
 const pack = getPackage();
 
-export default class PHPCSProvider extends DrupalWorkspaceProvider {
+export class PHPCSProvider extends DrupalWorkspaceProvider {
   extensions: string;
   collection = languages.createDiagnosticCollection();
   documentFilters: DocumentFilter[] = ['php', 'twig'].map((language) => ({

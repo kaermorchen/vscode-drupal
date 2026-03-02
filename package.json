@@ -30,7 +30,8 @@
     "release": "release-it",
     "test": "npm run compile && vscode-test",
     "test:watch": "mocha src/**/*.test.ts --watch",
-    "test:e2e": "vscode-test"
+    "test:e2e": "vscode-test",
+    "typecheck": "tsc -p ./ --noEmit"
   },
   "devDependencies": {
     "@release-it-plugins/lerna-changelog": "^8.0.1",

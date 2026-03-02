@@ -7,10 +7,10 @@ import {
   workspace,
   WorkspaceFolder,
 } from 'vscode';
-import DrupalWorkspace from '../base/drupal-workspace';
-import TextEditorCommand from './text-editor-command';
+import { DrupalWorkspace } from '../base/drupal-workspace';
+import { TextEditorCommand } from './text-editor-command';
 
-export default class SearchApi extends TextEditorCommand {
+export class SearchApi extends TextEditorCommand {
   static id = 'drupal.search-api';
 
   drupalWorkspaces: DrupalWorkspace[];
@@ -23,7 +23,7 @@ export default class SearchApi extends TextEditorCommand {
     window.onDidChangeActiveTextEditor(
       this.onActiveEditorChanged,
       this,
-      this.disposables
+      this.disposables,
     );
 
     this.onActiveEditorChanged();
@@ -43,7 +43,7 @@ export default class SearchApi extends TextEditorCommand {
     }
 
     const uri = Uri.parse(
-      `https://api.drupal.org/api/drupal/${version}/search/${selectedText}`
+      `https://api.drupal.org/api/drupal/${version}/search/${selectedText}`,
     );
 
     env.openExternal(uri);
@@ -52,7 +52,7 @@ export default class SearchApi extends TextEditorCommand {
   getDrupalWorkspace(workspaceFodler?: WorkspaceFolder) {
     return workspaceFodler
       ? this.drupalWorkspaces.find(
-          (item) => item.workspaceFolder === workspaceFodler
+          (item) => item.workspaceFolder === workspaceFodler,
         )
       : undefined;
   }
@@ -62,18 +62,18 @@ export default class SearchApi extends TextEditorCommand {
 
     if (window.activeTextEditor) {
       const workspaceFodler = workspace.getWorkspaceFolder(
-        window.activeTextEditor.document.uri
+        window.activeTextEditor.document.uri,
       );
 
       fileIsInDrupalWorkspace = Boolean(
-        this.getDrupalWorkspace(workspaceFodler)
+        this.getDrupalWorkspace(workspaceFodler),
       );
     }
 
     commands.executeCommand(
       'setContext',
       'drupal.fileIsInDrupalWorkspace',
-      fileIsInDrupalWorkspace
+      fileIsInDrupalWorkspace,
     );
   }
 }

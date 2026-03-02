@@ -1,8 +1,8 @@
 import { basename } from 'path';
-import findInfoFile from './find-info-file';
+import { findInfoFile } from './find-info-file';
 
-export default async function getModuleMachineName(
-  filePath: string
+export async function getModuleMachineName(
+  filePath: string,
 ): Promise<string | null> {
   const moduleFilePath = await findInfoFile(filePath);
 

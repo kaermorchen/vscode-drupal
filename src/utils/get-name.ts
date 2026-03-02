@@ -1,5 +1,5 @@
-import { Identifier } from "php-parser";
+import { Identifier } from 'php-parser';
 
-export default function getName(val: string | Identifier) {
+export function getName(val: string | Identifier) {
   return typeof val === 'string' ? val : val.name;
 }
