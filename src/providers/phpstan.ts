@@ -11,7 +11,7 @@ import {
   Uri,
   DocumentSelector,
 } from 'vscode';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
+import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
 
 interface Message {
   message: string;
@@ -19,7 +19,7 @@ interface Message {
   line: number;
 }
 
-export default class PHPStanProvider extends DrupalWorkspaceProvider {
+export class PHPStanProvider extends DrupalWorkspaceProvider {
   collection = languages.createDiagnosticCollection();
   docSelector: DocumentSelector;
 
@@ -45,7 +45,7 @@ export default class PHPStanProvider extends DrupalWorkspaceProvider {
         }
       },
       this,
-      this.disposables
+      this.disposables,
     );
 
     workspace.onDidSaveTextDocument(this.validate, this, this.disposables);
@@ -53,7 +53,7 @@ export default class PHPStanProvider extends DrupalWorkspaceProvider {
     workspace.onDidCloseTextDocument(
       this.clearDiagnostics,
       this,
-      this.disposables
+      this.disposables,
     );
   }
 
@@ -79,7 +79,7 @@ export default class PHPStanProvider extends DrupalWorkspaceProvider {
     if (executablePath === '') {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpstan'
+        'vendor/bin/phpstan',
       ).fsPath;
     }
 
@@ -98,11 +98,7 @@ export default class PHPStanProvider extends DrupalWorkspaceProvider {
     ];
 
     // TODO: add abort signal
-    const process = spawn(
-      executablePath,
-      args,
-      spawnOptions
-    );
+    const process = spawn(executablePath, args, spawnOptions);
 
     process.stdout.on('data', (data) => {
       const json = JSON.parse(data.toString());
@@ -119,9 +115,9 @@ export default class PHPStanProvider extends DrupalWorkspaceProvider {
             range: new Range(
               new Position(
                 line.lineNumber,
-                line.firstNonWhitespaceCharacterIndex
+                line.firstNonWhitespaceCharacterIndex,
               ),
-              new Position(line.lineNumber, line.range.end.character)
+              new Position(line.lineNumber, line.range.end.character),
             ),
           });
         });

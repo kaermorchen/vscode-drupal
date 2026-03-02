@@ -2,7 +2,7 @@ import { readdir, access } from 'fs/promises';
 import { join } from 'path';
 import { constants } from 'fs';
 
-export default async function findApiFiles(dirName: string) {
+export async function findApiFiles(dirName: string) {
   let matchedFiles: string[] = [];
 
   const dirs = await readdir(dirName, { withFileTypes: true });

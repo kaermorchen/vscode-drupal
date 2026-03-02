@@ -1,5 +1,5 @@
-import { workspace, WorkspaceFolder } from "vscode";
+import { workspace, WorkspaceFolder } from 'vscode';
 
-export default function getWorkspaceFolders(): readonly WorkspaceFolder[] {
+export function getWorkspaceFolders(): readonly WorkspaceFolder[] {
   return workspace.workspaceFolders ?? [];
 }

@@ -1,6 +1,6 @@
 import { Disposable as IDisposable } from 'vscode';
 
-export default class Disposable implements IDisposable {
+export class Disposable implements IDisposable {
   readonly disposables: IDisposable[] = [];
 
   dispose(): void {

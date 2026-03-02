@@ -8,11 +8,11 @@ import {
   workspace,
 } from 'vscode';
 import { Global } from 'php-parser';
-import { parsePHPDoc, parsePHPDocSummary } from '../utils/doc-parser';
+import { parsePHPDocSummary } from '../utils/doc-parser';
 import phpParser from '../utils/php-parser';
-import DrupalWorkspaceProviderWithWatcher from '../base/drupal-workspace-provider-with-watcher';
+import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
 
-export default class GlobalVariablesCompletionProvider
+export class GlobalVariablesCompletionProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
@@ -21,7 +21,7 @@ export default class GlobalVariablesCompletionProvider
   completions: CompletionItem[] = [];
 
   constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0]
+    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
   ) {
     super(arg);
 
@@ -34,8 +34,8 @@ export default class GlobalVariablesCompletionProvider
           scheme: 'file',
           pattern: this.drupalWorkspace.getRelativePattern('**'),
         },
-        this
-      )
+        this,
+      ),
     );
 
     this.parseFiles();

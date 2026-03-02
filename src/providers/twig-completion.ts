@@ -11,8 +11,8 @@ import {
 import { Class as ASTClass, Method, Namespace } from 'php-parser';
 import phpParser from '../utils/php-parser';
 import { parsePHPDocSummary } from '../utils/doc-parser';
-import DrupalWorkspaceProvider from '../base/drupal-workspace-provider';
-import getName from '../utils/get-name';
+import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
+import { getName } from '../utils/get-name';
 import { CompletionItemWithCallback } from '../types';
 
 const astFileCache = new Map<string, ASTClass>();
@@ -73,7 +73,7 @@ const twigFunctions: CompletionItemWithCallback[] = [
     detail: `function (Drupal)`,
     kind: CompletionItemKind.Function,
     insertText: new SnippetString(item.insertText),
-  })
+  }),
 );
 
 const twigFilters: CompletionItemWithCallback[] = [
@@ -127,12 +127,12 @@ const twigFilters: CompletionItemWithCallback[] = [
     detail: `filter (Drupal)`,
     kind: CompletionItemKind.Function,
     insertText: new SnippetString(item.insertText),
-  })
+  }),
 );
 
 const twigAll = twigFunctions.concat(twigFilters);
 
-export default class TwigCompletionProvider
+export class TwigCompletionProvider
   extends DrupalWorkspaceProvider
   implements CompletionItemProvider
 {
@@ -148,8 +148,8 @@ export default class TwigCompletionProvider
           scheme: 'file',
           pattern: this.drupalWorkspace.getRelativePattern('**'),
         },
-        this
-      )
+        this,
+      ),
     );
   }
 
@@ -170,7 +170,7 @@ export default class TwigCompletionProvider
   }
 
   async resolveCompletionItem(
-    item: CompletionItemWithCallback
+    item: CompletionItemWithCallback,
   ): Promise<CompletionItemWithCallback> {
     const [namespace, fnName] = item.callback.split('::');
     const parts = namespace.concat('.php').split('\\');
@@ -179,7 +179,7 @@ export default class TwigCompletionProvider
       'web',
       'core',
       'lib',
-      ...parts
+      ...parts,
     );
     const docblock = await this.getDocblock(uri, fnName);
 

@@ -1,14 +1,14 @@
 import { readFile } from 'fs/promises';
 import { parse } from 'yaml';
-import findInfoFile from './find-info-file';
+import { findInfoFile } from './find-info-file';
 
 interface ModuleInfo {
   name: string;
   type: 'module';
 }
 
-export default async function getModuleInfo(
-  filePath: string
+export async function getModuleInfo(
+  filePath: string,
 ): Promise<ModuleInfo | null> {
   const moduleFilePath = await findInfoFile(filePath);
 
