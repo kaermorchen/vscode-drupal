@@ -34,26 +34,23 @@
     "typecheck": "tsc -p ./ --noEmit"
   },
   "devDependencies": {
-    "@release-it-plugins/lerna-changelog": "^8.0.1",
-    "@types/gettext-parser": "^9.0.0",
-    "@types/node": "^25.3.2",
+    "@release-it-plugins/lerna-changelog": "8.0.1",
+    "@types/gettext-parser": "9.0.0",
+    "@types/node": "22",
     "@types/vscode": "1.100.0",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
-    "eslint": "^10.0.2",
-    "mocha": "^11.7.5",
-    "release-it": "^19.2.4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "@vscode/test-cli": "0.0.12",
+    "@vscode/test-electron": "2.5.2",
+    "mocha": "11.7.5",
+    "release-it": "19.2.4",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
   },
   "dependencies": {
-    "@rightcapital/phpdoc-parser": "^0.5.3",
-    "gettext-parser": "^9.0.1",
-    "php-parser": "^3.4.0",
-    "vscode-uri": "^3.1.0",
-    "yaml": "^2.8.2"
+    "@rightcapital/phpdoc-parser": "0.5.3",
+    "gettext-parser": "9.0.1",
+    "php-parser": "3.4.0",
+    "vscode-uri": "3.1.0",
+    "yaml": "2.8.2"
   },
   "release-it": {
     "plugins": {
