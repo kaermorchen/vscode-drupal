@@ -42,7 +42,6 @@
     "@vscode/test-electron": "2.5.2",
     "mocha": "11.7.5",
     "release-it": "19.2.4",
-    "ts-node": "10.9.2",
     "typescript": "5.9.3"
   },
   "dependencies": {
