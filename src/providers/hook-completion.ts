@@ -8,13 +8,13 @@ import {
   TextDocument,
   Uri,
   workspace,
-} from 'vscode';
-import { Function as ASTFunction } from 'php-parser';
-import { getModuleMachineName } from '../utils/get-module-machine-name';
-import { parsePHPDocSummary } from '../utils/doc-parser';
-import phpParser from '../utils/php-parser';
-import { getName } from '../utils/get-name';
-import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
+} from "vscode";
+import { Function as ASTFunction } from "php-parser";
+import { getModuleMachineName } from "../utils/get-module-machine-name";
+import { parsePHPDocSummary } from "../utils/doc-parser";
+import phpParser from "../utils/php-parser";
+import { getName } from "../utils/get-name";
+import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
@@ -24,7 +24,7 @@ export class HookCompletionProvider
   extends DrupalWorkspaceProviderWithWatcher
   implements CompletionItemProvider
 {
-  static language = 'php';
+  static language = "php";
 
   completions: CompletionItem[] = [];
   completionFileCache: Map<string, CompletionItem[]> = new Map();
@@ -40,9 +40,9 @@ export class HookCompletionProvider
       languages.registerCompletionItemProvider(
         {
           language: HookCompletionProvider.language,
-          scheme: 'file',
+          scheme: "file",
           pattern: this.drupalWorkspace.getRelativePattern(
-            '**/*.{module,theme}',
+            "**/*.{module,theme}",
           ),
         },
         this,
@@ -63,7 +63,7 @@ export class HookCompletionProvider
       const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
 
       for (const item of tree.children) {
-        if (item.kind !== 'function') {
+        if (item.kind !== "function") {
           continue;
         }
 
@@ -74,7 +74,7 @@ export class HookCompletionProvider
           continue;
         }
 
-        const funcCall = (item.loc?.source ?? name).replace(/\$/g, '\\$');
+        const funcCall = (item.loc?.source ?? name).replace(/\$/g, "\\$");
         const completion: CompletionItem = {
           label: name,
           kind: NODE_COMPLETION_ITEM[item.kind],
@@ -90,18 +90,18 @@ export class HookCompletionProvider
         if (lastComment) {
           const args = func.arguments.map((item) =>
             // Replace full import to last part
-            item.loc?.source?.replace(/^(\\(\w+))+/, '$2'),
+            item.loc?.source?.replace(/^(\\(\w+))+/, "$2"),
           );
           const summary = parsePHPDocSummary(lastComment.value);
 
           if (summary) {
             const value = [
-              '```php',
-              '<?php', //TODO: remove when vscode will support php syntax highlighting without this
-              `function ${name}(${args.join(', ')}) {}`,
-              '```',
+              "```php",
+              "<?php", //TODO: remove when vscode will support php syntax highlighting without this
+              `function ${name}(${args.join(", ")}) {}`,
+              "```",
               summary,
-            ].join('\n');
+            ].join("\n");
 
             completion.documentation = new MarkdownString(value);
           }
@@ -127,7 +127,7 @@ export class HookCompletionProvider
 
     return this.completions.map((item) => {
       const newItem = Object.assign({}, item);
-      const searchValue = 'function hook_';
+      const searchValue = "function hook_";
       const replaceValue = `function ${machineName}_`;
 
       if (newItem.insertText instanceof SnippetString) {

@@ -1,0 +1,8 @@
+name: Cache Example
+description: Demonstrates how to use Cache API.
+package: Example modules
+core_version_requirement: ^10.3 || ^11.0
+type: module
+dependencies:
+  - drupal:node
+  - examples:examples

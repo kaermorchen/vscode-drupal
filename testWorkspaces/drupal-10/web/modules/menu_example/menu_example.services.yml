@@ -1,0 +1,12 @@
+services:
+  menu_example.access_check.role:
+    class: Drupal\menu_example\Access\RoleAccessCheck
+    arguments: ['@current_user']
+    tags:
+      # _menu_example_role is added to the requirements section in the
+      # menu_example.routing.yml file to apply a custom access checker.
+      - { name: access_check, applies_to: _menu_example_role }
+  menu_example.route_subscriber:
+    class: Drupal\menu_example\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }
