@@ -1,7 +1,7 @@
-import { RelativePattern, workspace, WorkspaceFolder } from 'vscode';
+import { RelativePattern, workspace, WorkspaceFolder } from "vscode";
 
 export async function getComposer(workspaceFolder: WorkspaceFolder) {
-  const include = new RelativePattern(workspaceFolder, 'composer.json');
+  const include = new RelativePattern(workspaceFolder, "composer.json");
   const composerUri = await workspace.findFiles(include, undefined, 1);
 
   if (composerUri.length === 0) {

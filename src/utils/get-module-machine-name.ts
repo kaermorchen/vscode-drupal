@@ -1,5 +1,5 @@
-import { basename } from 'path';
-import { findInfoFile } from './find-info-file';
+import { basename } from "path";
+import { findInfoFile } from "./find-info-file";
 
 export async function getModuleMachineName(
   filePath: string,
@@ -10,5 +10,5 @@ export async function getModuleMachineName(
     return null;
   }
 
-  return basename(moduleFilePath).replace(/\.info\.yml$/, '');
+  return basename(moduleFilePath).replace(/\.info\.yml$/, "");
 }
