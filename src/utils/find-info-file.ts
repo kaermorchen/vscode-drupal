@@ -1,15 +1,18 @@
-import { readdir } from 'fs/promises';
-import { dirname, join } from 'path';
+import { readdir } from "fs/promises";
+import { dirname, join } from "path";
 
-export async function findInfoFile(filePath: string) {
+const INFO_FILE_REGEX = /\w+\.info\.yml$/;
+
+/**
+ * Finds the first .info.yml file in the same directory as the given file.
+ *
+ * @param filePath - Path to a file within a Drupal module.
+ * @returns Full path to the .info.yml file, or null if not found.
+ */
+export async function findInfoFile(filePath: string): Promise<string | null> {
   const fileDir = dirname(filePath);
-  const moduleFilePath = (await readdir(fileDir)).filter(
-    (allFilesPaths: string) => allFilesPaths.match(/\w+\.info\.yml$/) !== null,
-  );
+  const files = await readdir(fileDir);
+  const infoFile = files.find((file) => INFO_FILE_REGEX.test(file));
 
-  if (moduleFilePath[0]) {
-    return join(fileDir, moduleFilePath[0]);
-  } else {
-    return null;
-  }
+  return infoFile ? join(fileDir, infoFile) : null;
 }
