@@ -31,6 +31,13 @@
     "test": "npm run compile && vscode-test",
     "typecheck": "tsc -p ./ --noEmit"
   },
+  "dependencies": {
+    "@rightcapital/phpdoc-parser": "0.5.3",
+    "gettext-parser": "9.0.1",
+    "php-parser": "3.4.0",
+    "vscode-uri": "3.1.0",
+    "yaml": "2.8.2"
+  },
   "devDependencies": {
     "@release-it-plugins/lerna-changelog": "8.0.1",
     "@types/gettext-parser": "9.0.0",
@@ -41,13 +48,6 @@
     "mocha": "11.7.5",
     "release-it": "19.2.4",
     "typescript": "5.9.3"
-  },
-  "dependencies": {
-    "@rightcapital/phpdoc-parser": "0.5.3",
-    "gettext-parser": "9.0.1",
-    "php-parser": "3.4.0",
-    "vscode-uri": "3.1.0",
-    "yaml": "2.8.2"
   },
   "release-it": {
     "plugins": {

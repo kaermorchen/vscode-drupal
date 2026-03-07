@@ -22,6 +22,11 @@ describe("src/providers/global-variables", () => {
     const result = await provider?.provideCompletionItems();
 
     assert.ok(Array.isArray(result));
+
+    assert.strictEqual(result[0].detail, "Drupal global variable");
+    assert.strictEqual(result[0].kind, 5);
+    assert.strictEqual(result[0].label, "$base_insecure_url");
+
     assert.strictEqual(result.length, 8);
   });
 });

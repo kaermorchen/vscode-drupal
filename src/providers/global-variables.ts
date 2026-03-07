@@ -62,7 +62,7 @@ export class GlobalVariablesCompletionProvider
       const completion: CompletionItem = {
         label: `$${name}`,
         kind: CompletionItemKind.Variable,
-        detail: "global variable",
+        detail: "Drupal global variable",
       };
 
       const lastComment = item.leadingComments?.pop();

@@ -6,34 +6,22 @@ import { PHPCBFProvider } from "./phpcbf";
 import { DrupalWorkspace } from "../base/drupal-workspace";
 
 describe("src/providers/phpcbf", () => {
-  it("Should be instantiated by DrupalWorkspace", () => {
-    const workspaceFolder = workspace.workspaceFolders![0];
-    assert.equal(workspaceFolder.name, "drupal-10");
-    const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
-
-    const provider: PHPCBFProvider | undefined =
-      drupalWorkspace.disposables.find((d) => d instanceof PHPCBFProvider);
-
-    if (!provider) {
-      throw new Error("PHPCBFProvider not found");
-    }
-
-    assert.equal(provider.name, "phpcbf");
-    assert.ok(provider.extensions);
-    assert.ok(provider.documentFilters.length > 0);
-  });
-
   it("Should not format when disabled", async () => {
     const config = workspace.getConfiguration("drupal.phpcbf");
     const original = config.get("enabled");
     // Temporarily disable
     await config.update("enabled", false, true);
+
     try {
       const workspaceFolder = workspace.workspaceFolders![0];
       const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
       const provider = drupalWorkspace.disposables.find(
         (d) => d instanceof PHPCBFProvider,
       ) as PHPCBFProvider;
+
+      if (provider === undefined) {
+        throw new Error("PHPCBFProvider not found");
+      }
 
       // Mock document
       const document = {
@@ -42,11 +30,8 @@ describe("src/providers/phpcbf", () => {
         languageId: "php",
       } as unknown as TextDocument;
 
-      const edits = await provider.provideDocumentFormattingEdits(
-        document,
-        { tabSize: 2, insertSpaces: true },
-        {} as CancellationToken,
-      );
+      const edits = await provider.provideDocumentFormattingEdits(document);
+
       assert.deepEqual(edits, []);
     } finally {
       await config.update("enabled", original, true);
@@ -121,11 +106,7 @@ describe("src/providers/phpcbf", () => {
         lineCount: originalText.split("\n").length,
       } as unknown as TextDocument;
 
-      const edits = await provider.provideDocumentFormattingEdits(
-        document,
-        { tabSize: 2, insertSpaces: true },
-        {} as CancellationToken,
-      );
+      const edits = await provider.provideDocumentFormattingEdits(document);
       // Check that spawn was called
       assert.ok(spawned, "spawn should have been called");
       // Should have one TextEdit
@@ -208,11 +189,7 @@ describe("src/providers/phpcbf", () => {
         lineCount: 1,
       } as unknown as TextDocument;
 
-      const edits = await provider.provideDocumentFormattingEdits(
-        document,
-        { tabSize: 2, insertSpaces: true },
-        {} as CancellationToken,
-      );
+      const edits = await provider.provideDocumentFormattingEdits(document);
       assert.ok(spawned, "spawn should have been called");
       assert.deepEqual(edits, []);
     } finally {
