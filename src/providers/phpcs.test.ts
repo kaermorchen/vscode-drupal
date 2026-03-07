@@ -127,8 +127,6 @@ describe("src/providers/phpcs", () => {
       // Use a real file within the workspace to pass language match
       const fileUri = Uri.joinPath(workspaceFolder.uri, "web/autoload.php");
       const document = await workspace.openTextDocument(fileUri);
-      // Ensure the language is php (should be)
-      console.log("Document language:", document.languageId);
 
       await provider.validate(document);
       // Check that spawn was called
@@ -137,7 +135,7 @@ describe("src/providers/phpcs", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       // Check that diagnostics were added to collection
       const diagnostics = provider.collection.get(document.uri);
-      console.log("Diagnostics:", diagnostics);
+
       assert.ok(diagnostics, "diagnostics should exist");
       assert.equal(diagnostics!.length, 2);
       assert.equal(diagnostics![0].severity, 0); // ERROR severity mapping? In phpcs.ts LINTER_MESSAGE_TYPE.ERROR = DiagnosticSeverity.Error which is 0
