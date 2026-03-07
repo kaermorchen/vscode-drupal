@@ -50,6 +50,7 @@ export class RoutingCompletionProvider
 
   async clearCache(uri: Uri) {
     this.completionApiFileCache.delete(uri.fsPath);
+    this.completions = undefined;
 
     await this.parseFile(uri);
   }
