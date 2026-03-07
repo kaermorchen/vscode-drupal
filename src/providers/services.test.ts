@@ -8,11 +8,11 @@ import {
   ConfigurationTarget,
   extensions,
 } from "vscode";
-import { RoutingCompletionProvider } from "./routing";
+import { ServicesCompletionProvider } from "./services";
 import { DrupalWorkspace } from "../base/drupal-workspace";
 
-describe("src/providers/routing", () => {
-  it("Should return route completion items", async () => {
+describe("src/providers/services", () => {
+  it("Should return service completion items", async () => {
     const extension = extensions.getExtension("stanislav.vscode-drupal");
 
     if (extension) {
@@ -31,13 +31,13 @@ describe("src/providers/routing", () => {
     assert.equal(workspaceFolder.name, "drupal-10");
     const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
 
-    const provider: RoutingCompletionProvider | undefined =
+    const provider: ServicesCompletionProvider | undefined =
       drupalWorkspace.disposables.find(
-        (d) => d instanceof RoutingCompletionProvider,
+        (d) => d instanceof ServicesCompletionProvider,
       );
 
     if (!provider) {
-      throw new Error("RoutingCompletionProvider not found");
+      throw new Error("ServicesCompletionProvider not found");
     }
 
     const moduleUri = Uri.joinPath(
@@ -50,7 +50,7 @@ describe("src/providers/routing", () => {
     // Insert at the end of the document
     const insertPosition = new Position(document.lineCount, 0);
     await editor.edit((editBuilder) => {
-      editBuilder.insert(insertPosition, 'new Url("');
+      editBuilder.insert(insertPosition, 'Drupal::service("');
     });
 
     // After insertion, the new line is at index document.lineCount - 1
