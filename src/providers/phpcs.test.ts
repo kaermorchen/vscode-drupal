@@ -35,6 +35,10 @@ describe("src/providers/phpcs", () => {
         (d) => d instanceof PHPCSProvider,
       ) as PHPCSProvider;
 
+      if (provider === undefined) {
+        throw new Error("PHPCSProvider not found");
+      }
+
       // Mock document
       const document = {
         uri: Uri.file("/tmp/test.php"),
@@ -42,9 +46,12 @@ describe("src/providers/phpcs", () => {
         languageId: "php",
       } as unknown as TextDocument;
 
-      // This should early return because enabled is false
       await provider.validate(document);
-      // If we reach here, no error is fine
+
+      const diagnostics = provider.collection.get(document.uri);
+
+      assert.ok(Array.isArray(diagnostics));
+      assert.strictEqual(diagnostics.length, 0);
     } finally {
       await config.update("enabled", original, true);
     }
@@ -123,6 +130,10 @@ describe("src/providers/phpcs", () => {
       const provider = drupalWorkspace.disposables.find(
         (d) => d instanceof PHPCSProvider,
       ) as PHPCSProvider;
+
+      if (provider === undefined) {
+        throw new Error("PHPCSProvider not found");
+      }
 
       // Use a real file within the workspace to pass language match
       const fileUri = Uri.joinPath(workspaceFolder.uri, "web/autoload.php");

@@ -35,6 +35,10 @@ describe("src/providers/phpstan", () => {
         (d) => d instanceof PHPStanProvider,
       ) as PHPStanProvider;
 
+      if (!provider) {
+        throw new Error("PHPCSProvider not found");
+      }
+
       // Mock document
       const document = {
         uri: Uri.file("/tmp/test.php"),
@@ -44,7 +48,11 @@ describe("src/providers/phpstan", () => {
 
       // This should early return because enabled is false
       await provider.validate(document);
-      // If we reach here, no error is fine
+
+      const diagnostics = provider.collection.get(document.uri);
+
+      assert.ok(Array.isArray(diagnostics));
+      assert.strictEqual(diagnostics.length, 0);
     } finally {
       await config.update("enabled", original, true);
     }

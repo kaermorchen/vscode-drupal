@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn } from "child_process";
 import {
   Diagnostic,
   DiagnosticSeverity,
@@ -10,9 +10,9 @@ import {
   Position,
   Uri,
   DocumentFilter,
-} from 'vscode';
-import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
-import { getPackage } from '../utils/get-package';
+} from "vscode";
+import { DrupalWorkspaceProvider } from "../base/drupal-workspace-provider";
+import { getPackage } from "../utils/get-package";
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -36,10 +36,10 @@ const pack = getPackage();
 export class PHPCSProvider extends DrupalWorkspaceProvider {
   extensions: string;
   collection = languages.createDiagnosticCollection();
-  documentFilters: DocumentFilter[] = ['php', 'twig'].map((language) => ({
+  documentFilters: DocumentFilter[] = ["php", "twig"].map((language) => ({
     language,
-    scheme: 'file',
-    pattern: this.drupalWorkspace.getRelativePattern('**'),
+    scheme: "file",
+    pattern: this.drupalWorkspace.getRelativePattern("**"),
   }));
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
@@ -49,9 +49,9 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
     this.extensions = pack.contributes.languages
       .map((lang: { id: string; extensions: string[] }) =>
-        lang.extensions.map((item) => item.substring(1)).join(','),
+        lang.extensions.map((item) => item.substring(1)).join(","),
       )
-      .join(',');
+      .join(",");
 
     if (window.activeTextEditor) {
       this.validate(window.activeTextEditor.document);
@@ -93,40 +93,37 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
     const config = this.config;
 
-    if (!config.get('enabled')) {
+    if (!config.get("enabled")) {
       return;
     }
 
-    let executablePath = config.get<string>('executablePath', '');
+    let executablePath = config.get<string>("executablePath", "");
 
-    if (executablePath === '') {
+    if (executablePath === "") {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpcs',
+        "vendor/bin/phpcs",
       ).fsPath;
     }
 
     const filePath = document.uri.path;
     const spawnOptions = {
-      encoding: 'utf8',
+      encoding: "utf8",
       timeout: 1000 * 60 * 1, // 1 minute
     };
     const args = [
-      ...config.get('args', []),
-      '-q',
-      '--report=json',
+      ...config.get("args", []),
+      "-q",
+      "--report=json",
       `--stdin-path=${filePath}`,
       `--extensions=${this.extensions}`,
-      '-',
+      "-",
     ];
 
     // TODO: add abort signal
     const process = spawn(executablePath, args, spawnOptions);
 
-    process.stdin.write(document.getText());
-    process.stdin.end();
-
-    process.stdout.on('data', (data) => {
+    process.stdout.on("data", (data) => {
       const json = JSON.parse(data.toString());
       const diagnostics: Diagnostic[] = [];
 
@@ -150,12 +147,15 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       this.collection.set(document.uri, diagnostics);
     });
 
-    process.stderr.on('data', (data) => {
+    process.stderr.on("data", (data) => {
       console.error(`stderr: ${data}`);
     });
+
+    process.stdin.write(document.getText());
+    process.stdin.end();
   }
 
   get name() {
-    return 'phpcs';
+    return "phpcs";
   }
 }
