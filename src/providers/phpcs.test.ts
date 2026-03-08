@@ -1,0 +1,162 @@
+import assert from "assert/strict";
+import { describe, it } from "mocha";
+import { workspace, window, Uri, TextDocument, languages } from "vscode";
+import { spawn } from "child_process";
+import { PHPCSProvider } from "./phpcs";
+import { DrupalWorkspace } from "../base/drupal-workspace";
+
+describe("src/providers/phpcs", () => {
+  it("Should be instantiated by DrupalWorkspace", () => {
+    const workspaceFolder = workspace.workspaceFolders![0];
+    assert.equal(workspaceFolder.name, "drupal-10");
+    const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+
+    const provider: PHPCSProvider | undefined =
+      drupalWorkspace.disposables.find((d) => d instanceof PHPCSProvider);
+
+    if (!provider) {
+      throw new Error("PHPCSProvider not found");
+    }
+
+    assert.equal(provider.name, "phpcs");
+    assert.ok(provider.extensions);
+    assert.ok(provider.documentFilters.length > 0);
+  });
+
+  it("Should not validate when disabled", async () => {
+    const config = workspace.getConfiguration("drupal.phpcs");
+    const original = config.get("enabled");
+    // Temporarily disable
+    await config.update("enabled", false, true);
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = drupalWorkspace.disposables.find(
+        (d) => d instanceof PHPCSProvider,
+      ) as PHPCSProvider;
+
+      if (provider === undefined) {
+        throw new Error("PHPCSProvider not found");
+      }
+
+      // Mock document
+      const document = {
+        uri: Uri.file("/tmp/test.php"),
+        getText: () => '<?php echo "hi";',
+        languageId: "php",
+      } as unknown as TextDocument;
+
+      await provider.validate(document);
+
+      const diagnostics = provider.collection.get(document.uri);
+
+      assert.ok(Array.isArray(diagnostics));
+      assert.strictEqual(diagnostics.length, 0);
+    } finally {
+      await config.update("enabled", original, true);
+    }
+  });
+
+  it("Should create diagnostics from phpcs output", async () => {
+    const config = workspace.getConfiguration("drupal.phpcs");
+    const originalEnabled = config.get("enabled");
+    const originalArgs = config.get("args");
+    // Enable and set empty args to avoid external dependencies
+    await config.update("enabled", true, true);
+    await config.update("args", [], true);
+
+    // Mock spawn
+    const originalSpawn = spawn;
+    let spawned = false;
+    let capturedFilePath: string | null = null;
+    (spawn as any) = (executablePath: string, args: string[], options: any) => {
+      spawned = true;
+      // Capture the file path from args (--stdin-path)
+      const stdinPathArg = args.find((arg) => arg.startsWith("--stdin-path="));
+      if (stdinPathArg) {
+        capturedFilePath = stdinPathArg.substring("--stdin-path=".length);
+      }
+      // Return a mock child process that emits JSON output
+      const mockProcess = {
+        stdin: {
+          write: (data: string) => {},
+          end: () => {},
+        },
+        stdout: {
+          on: (event: string, callback: (data: Buffer) => void) => {
+            if (event === "data") {
+              // Simulate phpcs JSON output
+              const output = JSON.stringify({
+                files: {
+                  [capturedFilePath!]: {
+                    messages: [
+                      {
+                        message: "Missing file doc comment",
+                        source: "Drupal.Commenting.FileComment",
+                        severity: 5,
+                        fixable: false,
+                        type: "ERROR",
+                        line: 1,
+                        column: 1,
+                      },
+                      {
+                        message: "Line indented incorrectly",
+                        source: "Drupal.WhiteSpace.ScopeIndent",
+                        severity: 3,
+                        fixable: true,
+                        type: "WARNING",
+                        line: 2,
+                        column: 5,
+                      },
+                    ],
+                  },
+                },
+              });
+              // Simulate async emission
+              setImmediate(() => callback(Buffer.from(output)));
+            }
+          },
+        },
+        stderr: {
+          on: (event: string, callback: (data: Buffer) => void) => {},
+        },
+      };
+      return mockProcess;
+    };
+
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = drupalWorkspace.disposables.find(
+        (d) => d instanceof PHPCSProvider,
+      ) as PHPCSProvider;
+
+      if (provider === undefined) {
+        throw new Error("PHPCSProvider not found");
+      }
+
+      // Use a real file within the workspace to pass language match
+      const fileUri = Uri.joinPath(workspaceFolder.uri, "web/autoload.php");
+      const document = await workspace.openTextDocument(fileUri);
+
+      await provider.validate(document);
+      // Check that spawn was called
+      assert.ok(spawned, "spawn should have been called");
+      // Wait a bit for async processing
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Check that diagnostics were added to collection
+      const diagnostics = provider.collection.get(document.uri);
+
+      assert.ok(diagnostics, "diagnostics should exist");
+      assert.equal(diagnostics!.length, 2);
+      assert.equal(diagnostics![0].severity, 0); // ERROR severity mapping? In phpcs.ts LINTER_MESSAGE_TYPE.ERROR = DiagnosticSeverity.Error which is 0
+      assert.equal(diagnostics![0].message, "Missing file doc comment");
+      assert.equal(diagnostics![1].severity, 1); // WARNING severity mapping
+    } finally {
+      // Restore spawn
+      (spawn as any) = originalSpawn;
+      await config.update("enabled", originalEnabled, true);
+      await config.update("args", originalArgs, true);
+    }
+  });
+});

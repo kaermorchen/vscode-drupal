@@ -26,15 +26,16 @@ export class HookCompletionProvider
 {
   static language = "php";
 
-  completions: CompletionItem[] = [];
-  completionFileCache: Map<string, CompletionItem[]> = new Map();
+  completions: CompletionItem[] | undefined;
+  completionApiFileCache: Map<string, CompletionItem[]> = new Map();
+  completionModuleFileCache: Map<string, CompletionItem[]> = new Map();
 
   constructor(
     arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
   ) {
     super(arg);
 
-    this.watcher.onDidChange(this.parseFiles, this, this.disposables);
+    this.watcher.onDidChange(this.clearCache, this, this.disposables);
 
     this.disposables.push(
       languages.registerCompletionItemProvider(
@@ -48,101 +49,123 @@ export class HookCompletionProvider
         this,
       ),
     );
-
-    this.parseFiles();
   }
 
-  async parseFiles(uri?: Uri) {
-    const uris = uri
-      ? [uri]
-      : await this.drupalWorkspace.findFiles(this.pattern);
+  async clearCache(uri: Uri) {
+    this.completionApiFileCache.delete(uri.fsPath);
+    this.completionModuleFileCache.clear();
+
+    await this.parseFile(uri);
+  }
+
+  async parseFiles() {
+    const uris = await this.drupalWorkspace.findFiles(this.pattern);
 
     for (const uri of uris) {
-      const completions: CompletionItem[] = [];
-      const buffer = await workspace.fs.readFile(uri);
-      const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
+      await this.parseFile(uri);
+    }
+  }
 
-      for (const item of tree.children) {
-        if (item.kind !== "function") {
-          continue;
-        }
+  async parseFile(uri: Uri) {
+    const completions: CompletionItem[] = [];
+    const buffer = await workspace.fs.readFile(uri);
+    const tree = phpParser.parseCode(buffer.toString(), uri.fsPath);
 
-        const func: ASTFunction = item as ASTFunction;
-        const name = getName(func.name);
-
-        if (/^hook_/.test(name) === false) {
-          continue;
-        }
-
-        const funcCall = (item.loc?.source ?? name).replace(/\$/g, "\\$");
-        const completion: CompletionItem = {
-          label: name,
-          kind: NODE_COMPLETION_ITEM[item.kind],
-          detail: `Implements ${name}`,
-          insertText: new SnippetString(
-            `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`,
-          ),
-          preselect: true,
-        };
-
-        const lastComment = item.leadingComments?.pop();
-
-        if (lastComment) {
-          const args = func.arguments.map((item) =>
-            // Replace full import to last part
-            item.loc?.source?.replace(/^(\\(\w+))+/, "$2"),
-          );
-          const summary = parsePHPDocSummary(lastComment.value);
-
-          if (summary) {
-            const value = [
-              "```php",
-              "<?php", //TODO: remove when vscode will support php syntax highlighting without this
-              `function ${name}(${args.join(", ")}) {}`,
-              "```",
-              summary,
-            ].join("\n");
-
-            completion.documentation = new MarkdownString(value);
-          }
-        }
-
-        completions.push(completion);
+    for (const item of tree.children) {
+      if (item.kind !== "function") {
+        continue;
       }
 
-      this.completionFileCache.set(uri.fsPath, completions);
+      const func: ASTFunction = item as ASTFunction;
+      const name = getName(func.name);
+
+      if (/^hook_/.test(name) === false) {
+        continue;
+      }
+
+      const funcCall = (item.loc?.source ?? name).replace(/\$/g, "\\$");
+      const completion: CompletionItem = {
+        label: name,
+        kind: NODE_COMPLETION_ITEM[item.kind],
+        detail: `Implements ${name}`,
+        insertText: new SnippetString(
+          `/**\n * Implements ${name}().\n */\n${funcCall} {\n\t$0\n}`,
+        ),
+        preselect: true,
+      };
+
+      const lastComment = item.leadingComments?.pop();
+
+      if (lastComment) {
+        const args = func.arguments.map((item) =>
+          // Replace full import to last part
+          item.loc?.source?.replace(/^(\\(\w+))+/, "$2"),
+        );
+        const summary = parsePHPDocSummary(lastComment.value);
+
+        if (summary) {
+          const value = [
+            "```php",
+            "<?php", //TODO: remove when vscode will support php syntax highlighting without this
+            `function ${name}(${args.join(", ")}) {}`,
+            "```",
+            summary,
+          ].join("\n");
+
+          completion.documentation = new MarkdownString(value);
+        }
+      }
+
+      completions.push(completion);
     }
 
-    this.completions = ([] as CompletionItem[]).concat(
-      ...this.completionFileCache.values(),
-    );
+    this.completionApiFileCache.set(uri.fsPath, completions);
   }
 
   async provideCompletionItems(document: TextDocument) {
+    if (this.completionModuleFileCache.has(document.uri.fsPath)) {
+      return this.completionModuleFileCache.get(document.uri.fsPath);
+    }
+
     const machineName = await getModuleMachineName(document.uri.path);
 
     if (!machineName) {
-      return this.completions;
+      return [];
     }
 
-    return this.completions.map((item) => {
-      const newItem = Object.assign({}, item);
-      const searchValue = "function hook_";
-      const replaceValue = `function ${machineName}_`;
+    if (this.completionApiFileCache.size === 0) {
+      await this.parseFiles();
+    }
 
-      if (newItem.insertText instanceof SnippetString) {
-        newItem.insertText = new SnippetString(
-          newItem.insertText.value.replace(searchValue, replaceValue),
-        );
+    const completionsForModule: CompletionItem[] = [];
+
+    for (const completionItems of this.completionApiFileCache.values()) {
+      for (const item of completionItems) {
+        const newItem = Object.assign({}, item);
+        const searchValue = "function hook_";
+        const replaceValue = `function ${machineName}_`;
+
+        if (newItem.insertText instanceof SnippetString) {
+          newItem.insertText = new SnippetString(
+            newItem.insertText.value.replace(searchValue, replaceValue),
+          );
+        }
+
+        if (newItem.documentation instanceof MarkdownString) {
+          newItem.documentation = new MarkdownString(
+            newItem.documentation.value.replace(searchValue, replaceValue),
+          );
+        }
+
+        completionsForModule.push(newItem);
       }
+    }
 
-      if (newItem.documentation instanceof MarkdownString) {
-        newItem.documentation = new MarkdownString(
-          newItem.documentation.value.replace(searchValue, replaceValue),
-        );
-      }
+    this.completionModuleFileCache.set(
+      document.uri.fsPath,
+      completionsForModule,
+    );
 
-      return newItem;
-    });
+    return completionsForModule;
   }
 }

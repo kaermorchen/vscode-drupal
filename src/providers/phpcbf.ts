@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn } from "child_process";
 import {
   TextDocument,
   Range,
@@ -9,9 +9,9 @@ import {
   languages,
   Uri,
   DocumentFilter,
-} from 'vscode';
-import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
-import { getPackage } from '../utils/get-package';
+} from "vscode";
+import { DrupalWorkspaceProvider } from "../base/drupal-workspace-provider";
+import { getPackage } from "../utils/get-package";
 
 const pack = getPackage();
 
@@ -20,10 +20,10 @@ export class PHPCBFProvider
   implements DocumentFormattingEditProvider
 {
   extensions: string;
-  documentFilters: DocumentFilter[] = ['php', 'twig'].map((language) => ({
+  documentFilters: DocumentFilter[] = ["php", "twig"].map((language) => ({
     language,
-    scheme: 'file',
-    pattern: this.drupalWorkspace.getRelativePattern('**'),
+    scheme: "file",
+    pattern: this.drupalWorkspace.getRelativePattern("**"),
   }));
 
   constructor(arg: ConstructorParameters<typeof DrupalWorkspaceProvider>[0]) {
@@ -38,58 +38,53 @@ export class PHPCBFProvider
 
     this.extensions = pack.contributes.languages
       .map((lang: { id: string; extensions: string[] }) =>
-        lang.extensions.map((item) => item.substring(1)).join(','),
+        lang.extensions.map((item) => item.substring(1)).join(","),
       )
-      .join(',');
+      .join(",");
   }
 
   async provideDocumentFormattingEdits(
     document: TextDocument,
-    options: FormattingOptions,
-    token: CancellationToken,
   ): Promise<TextEdit[]> {
     const config = this.config;
 
-    if (!config.get('enabled')) {
+    if (!config.get("enabled")) {
       return [];
     }
 
-    let executablePath = config.get<string>('executablePath', '');
+    let executablePath = config.get<string>("executablePath", "");
 
-    if (executablePath === '') {
+    if (executablePath === "") {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpcbf',
+        "vendor/bin/phpcbf",
       ).fsPath;
     }
 
     return new Promise((resolve, reject) => {
       const filePath = document.uri.path;
       const spawnOptions = {
-        encoding: 'utf8',
+        encoding: "utf8",
         timeout: 1000 * 60 * 1, // 1 minute
       };
       const args = [
-        ...config.get('args', []),
-        '-q',
+        ...config.get("args", []),
+        "-q",
         `--stdin-path=${filePath}`,
         `--extensions=${this.extensions}`,
-        '-',
+        "-",
       ];
 
       // TODO: add abort signal
       const process = spawn(executablePath, args, spawnOptions);
       const originalText = document.getText();
-      let formattedText = '';
+      let formattedText = "";
 
-      process.stdin.write(originalText);
-      process.stdin.end();
-
-      process.stdout.on('data', (data) => {
+      process.stdout.on("data", (data) => {
         formattedText += data.toString();
       });
 
-      process.on('close', () => {
+      process.on("close", () => {
         if (originalText === formattedText) {
           resolve([]);
         } else {
@@ -102,15 +97,18 @@ export class PHPCBFProvider
         }
       });
 
-      process.stderr.on('data', (data) => {
+      process.stderr.on("data", (data) => {
         const msg = `stderr: ${data}`;
         console.error(msg);
         reject(new Error(msg));
       });
+
+      process.stdin.write(originalText);
+      process.stdin.end();
     });
   }
 
   get name() {
-    return 'phpcbf';
+    return "phpcbf";
   }
 }
