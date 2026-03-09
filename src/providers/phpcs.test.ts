@@ -77,14 +77,16 @@ describe("src/providers/phpcs", () => {
         capturedFilePath = stdinPathArg.substring("--stdin-path=".length);
       }
       // Return a mock child process that emits JSON output
+      const listeners: { [event: string]: Function[] } = {
+        close: [],
+        error: [],
+      };
       const mockProcess = {
         stdin: {
           write: (data: string) => {},
-          end: () => {},
-        },
-        stdout: {
-          on: (event: string, callback: (data: Buffer) => void) => {
-            if (event === "data") {
+          end: () => {
+            // After stdin ends, simulate stdout data and then close
+            setImmediate(() => {
               // Simulate phpcs JSON output
               const output = JSON.stringify({
                 files: {
@@ -112,13 +114,32 @@ describe("src/providers/phpcs", () => {
                   },
                 },
               });
-              // Simulate async emission
-              setImmediate(() => callback(Buffer.from(output)));
+              // Emit data event on stdout
+              if (mockProcess.stdout.listeners.data) {
+                mockProcess.stdout.listeners.data.forEach((cb) =>
+                  cb(Buffer.from(output)),
+                );
+              }
+              // Emit close event with code 0
+              listeners.close.forEach((cb) => cb(0));
+            });
+          },
+        },
+        stdout: {
+          listeners: { data: [] as Function[] },
+          on: (event: string, callback: (data: Buffer) => void) => {
+            if (event === "data") {
+              mockProcess.stdout.listeners.data.push(callback);
             }
           },
         },
         stderr: {
           on: (event: string, callback: (data: Buffer) => void) => {},
+        },
+        on: (event: string, callback: (code?: number) => void) => {
+          if (listeners[event]) {
+            listeners[event].push(callback);
+          }
         },
       };
       return mockProcess;
