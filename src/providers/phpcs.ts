@@ -13,6 +13,7 @@ import {
 } from "vscode";
 import { DrupalWorkspaceProvider } from "../base/drupal-workspace-provider";
 import { getPackage } from "../utils/get-package";
+import { logger } from "../utils/logger";
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -54,13 +55,19 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       .join(",");
 
     if (window.activeTextEditor) {
-      this.validate(window.activeTextEditor.document);
+      const doc = window.activeTextEditor.document;
+      this.validate(doc).catch(() =>
+        this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+      );
     }
 
     window.onDidChangeActiveTextEditor(
       (editor) => {
         if (editor) {
-          this.validate(editor.document);
+          const doc = editor.document;
+          this.validate(doc).catch(() =>
+            this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+          );
         }
       },
       this,
@@ -68,7 +75,12 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
     );
 
     workspace.onDidChangeTextDocument(
-      (e) => this.validate(e.document),
+      (e) => {
+        const doc = e.document;
+        this.validate(e.document).catch(() =>
+          this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+        );
+      },
       this,
       this.disposables,
     );
@@ -86,7 +98,9 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
     }
   }
 
-  async validate(document: TextDocument) {
+  async validate(document: TextDocument): Promise<void> {
+    this.clearDiagnostics(document);
+
     if (languages.match(this.documentFilters, document) === 0) {
       return;
     }
@@ -106,56 +120,99 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       ).fsPath;
     }
 
-    const filePath = document.uri.path;
-    const spawnOptions = {
-      encoding: "utf8",
-      timeout: 1000 * 60 * 1, // 1 minute
-    };
-    const args = [
-      ...config.get("args", []),
-      "-q",
-      "--report=json",
-      `--stdin-path=${filePath}`,
-      `--extensions=${this.extensions}`,
-      "-",
-    ];
-
-    // TODO: add abort signal
-    const process = spawn(executablePath, args, spawnOptions);
-
-    process.stdout.on("data", (data) => {
-      const json = JSON.parse(data.toString());
+    return new Promise((resolve, reject) => {
+      const filePath = document.uri.path;
+      const spawnOptions = {
+        encoding: "utf8",
+        timeout: 1000 * 60 * 1, // 1 minute
+      };
+      const args = [
+        ...config.get("args", []),
+        "-q",
+        "--report=json",
+        `--stdin-path=${filePath}`,
+        `--extensions=${this.extensions}`,
+        "-",
+      ];
       const diagnostics: Diagnostic[] = [];
 
-      if (filePath in json.files) {
-        json.files[filePath].messages.forEach((obj: LinterMessage) => {
-          const line = obj.line - 1;
-          const character = obj.column;
+      // TODO: add abort signal
+      const process = spawn(executablePath, args, spawnOptions);
+      let stderr: string | Error = "";
 
-          diagnostics.push({
-            severity: LINTER_MESSAGE_TYPE[obj.type],
-            message: obj.message,
-            source: this.source,
-            range: new Range(
-              new Position(line, character),
-              new Position(line, character),
-            ),
-          });
-        });
-      }
+      process.stdout.on("data", (data) => {
+        const stringifiedData = data.toString();
+        let json;
 
-      this.collection.set(document.uri, diagnostics);
+        if (/^ERROR/.test(stringifiedData)) {
+          stderr += stringifiedData;
+          reject();
+          return;
+        }
+
+        try {
+          json = JSON.parse(stringifiedData);
+
+          if (filePath in json.files) {
+            json.files[filePath].messages.forEach((obj: LinterMessage) => {
+              const line = obj.line - 1;
+              const character = obj.column;
+
+              diagnostics.push({
+                severity: LINTER_MESSAGE_TYPE[obj.type],
+                message: obj.message,
+                source: this.source,
+                range: new Range(
+                  new Position(line, character),
+                  new Position(line, character),
+                ),
+              });
+            });
+          }
+
+          this.collection.set(document.uri, diagnostics);
+        } catch (error) {
+          stderr += `Parsing error: ${error}`;
+          reject();
+          return;
+        }
+      });
+
+      process.stderr.on("data", (data) => {
+        this.logError(`process.stderr data ${data}`);
+
+        if (stderr instanceof String === false) {
+          stderr = "";
+        }
+
+        stderr += data;
+      });
+
+      process.on("error", (err) => {
+        this.logError(`process error ${err}`);
+
+        stderr = err;
+      });
+
+      process.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+        } else if (diagnostics.length === 0) {
+          this.logError(`Exit code ${code}: ${stderr}`);
+          reject();
+        }
+      });
+
+      process.stdin.write(document.getText());
+      process.stdin.end();
     });
-
-    process.stderr.on("data", (data) => {
-      console.error(`stderr: ${data}`);
-    });
-
-    process.stdin.write(document.getText());
-    process.stdin.end();
   }
 
   get name() {
     return "phpcs";
+  }
+
+  logError(message: string | Error) {
+    logger.error(`${this.name}: ${message}`);
   }
 }

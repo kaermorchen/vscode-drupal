@@ -28,7 +28,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -p ./ -w",
     "release": "release-it",
-    "test": "npm run compile && vscode-test",
+    "test": "rm -rf out && npm run compile && vscode-test",
     "typecheck": "tsc -p ./ --noEmit"
   },
   "dependencies": {
