@@ -1,10 +1,11 @@
-import { ExtensionContext } from 'vscode';
-import { ShowOutputChannel } from './commands/show-output-channel';
-import { DrupalStatusBar } from './base/drupal-status-bar';
-import { DrupalWorkspace } from './base/drupal-workspace';
-import { getWorkspaceFolders } from './utils/get-workspace-folders';
-import { getComposer } from './utils/get-composer';
-import { SearchApi } from './commands/search-api';
+import { ExtensionContext } from "vscode";
+import { ShowOutputChannel } from "./commands/show-output-channel";
+import { DrupalStatusBar } from "./base/drupal-status-bar";
+import { DrupalWorkspace } from "./base/drupal-workspace";
+import { getWorkspaceFolders } from "./utils/get-workspace-folders";
+import { getComposer } from "./utils/get-composer";
+import { SearchApi } from "./commands/search-api";
+import { logger } from "./utils/logger";
 
 export async function activate(context: ExtensionContext) {
   const drupalWorkspaces = [];
@@ -16,7 +17,7 @@ export async function activate(context: ExtensionContext) {
       continue;
     }
 
-    if ('drupal/core-recommended' in composer.require) {
+    if ("drupal/core-recommended" in composer.require) {
       drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
     }
   }
@@ -35,6 +36,8 @@ export async function activate(context: ExtensionContext) {
     new SearchApi(drupalWorkspaces),
     new ShowOutputChannel(),
   );
+
+  logger.info("Drupal extension activated");
 }
 
 export function deactivate() {}

@@ -126,56 +126,15 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
         encoding: "utf8",
         timeout: 1000 * 60 * 1, // 1 minute
       };
-      const args = [
-        ...config.get("args", []),
-        "-q",
-        "--report=json",
-        `--stdin-path=${filePath}`,
-        `--extensions=${this.extensions}`,
-        "-",
-      ];
-      const diagnostics: Diagnostic[] = [];
+      const args = [...config.get("args", []), "-q", "--report=json", filePath];
 
       // TODO: add abort signal
       const process = spawn(executablePath, args, spawnOptions);
+      let result: string = "";
       let stderr: string | Error = "";
 
       process.stdout.on("data", (data) => {
-        const stringifiedData = data.toString();
-        let json;
-
-        if (/^ERROR/.test(stringifiedData)) {
-          stderr += stringifiedData;
-          reject();
-          return;
-        }
-
-        try {
-          json = JSON.parse(stringifiedData);
-
-          if (filePath in json.files) {
-            json.files[filePath].messages.forEach((obj: LinterMessage) => {
-              const line = obj.line - 1;
-              const character = obj.column;
-
-              diagnostics.push({
-                severity: LINTER_MESSAGE_TYPE[obj.type],
-                message: obj.message,
-                source: this.source,
-                range: new Range(
-                  new Position(line, character),
-                  new Position(line, character),
-                ),
-              });
-            });
-          }
-
-          this.collection.set(document.uri, diagnostics);
-        } catch (error) {
-          stderr += `Parsing error: ${error}`;
-          reject();
-          return;
-        }
+        result += data.toString();
       });
 
       process.stderr.on("data", (data) => {
@@ -195,10 +154,50 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       });
 
       process.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else if (diagnostics.length === 0) {
+        if (stderr) {
           this.logError(`Exit code ${code}: ${stderr}`);
+          reject();
+        } else if (result) {
+          if (/^ERROR/.test(result)) {
+            stderr += result;
+            reject();
+            return;
+          }
+
+          try {
+            const json = JSON.parse(result);
+            const diagnostics: Diagnostic[] = [];
+            const messages: LinterMessage[] | undefined =
+              json?.files?.[filePath]?.messages ?? json?.files?.STDIN?.messages;
+
+            if (!Array.isArray(messages)) {
+              throw new Error("Responce messages is not an array");
+            }
+
+            for (const obj of messages) {
+              const line = obj.line - 1;
+              const character = obj.column;
+
+              diagnostics.push({
+                severity: LINTER_MESSAGE_TYPE[obj.type],
+                message: obj.message,
+                source: this.source,
+                range: new Range(
+                  new Position(line, character),
+                  new Position(line, character),
+                ),
+              });
+            }
+
+            this.collection.set(document.uri, diagnostics);
+            resolve();
+          } catch (error) {
+            stderr += `Parsing error: ${error}`;
+            reject();
+            return;
+          }
+        } else {
+          this.logError(`Exit code ${code}: ${new Error("Unexpected error")}`);
           reject();
         }
       });

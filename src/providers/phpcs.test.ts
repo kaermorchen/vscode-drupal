@@ -71,11 +71,8 @@ describe("src/providers/phpcs", () => {
     let capturedFilePath: string | null = null;
     (spawn as any) = (executablePath: string, args: string[], options: any) => {
       spawned = true;
-      // Capture the file path from args (--stdin-path)
-      const stdinPathArg = args.find((arg) => arg.startsWith("--stdin-path="));
-      if (stdinPathArg) {
-        capturedFilePath = stdinPathArg.substring("--stdin-path=".length);
-      }
+      // Capture the file path from args (last argument)
+      capturedFilePath = args[args.length - 1];
       // Return a mock child process that emits JSON output
       const listeners: { [event: string]: Function[] } = {
         close: [],
