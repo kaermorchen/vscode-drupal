@@ -1,6 +1,6 @@
 import { window } from "vscode";
 
-const outputChannel = window.createOutputChannel("Drupal");
+export const outputChannel = window.createOutputChannel("Drupal");
 
 class Logger {
   info(...args: unknown[]): void {
@@ -36,7 +36,7 @@ function getPrefixWithTimestamp(loggerType: "INFO" | "WARN" | "ERROR"): string {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = String(now.getSeconds()).padStart(2, "0");
-  const milliseconds = String(now.getMilliseconds).padStart(3, "0");
+  const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
   const timestamp = `${hours}:${minutes}:${seconds}:${milliseconds}`;
 
   return `[${loggerType} ${timestamp}]`;
