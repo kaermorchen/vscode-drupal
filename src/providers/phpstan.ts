@@ -138,10 +138,7 @@ export class PHPStanProvider extends DrupalWorkspaceProvider {
       });
 
       process.on("close", (code) => {
-        if (stderr) {
-          this.logError(`Exit code ${code}: ${stderr}`);
-          reject(new Error(`PHPStan process error: ${stderr}`));
-        } else if (result) {
+        if (result) {
           try {
             const json = JSON.parse(result);
 
@@ -174,10 +171,13 @@ export class PHPStanProvider extends DrupalWorkspaceProvider {
 
             resolve();
           } catch (error) {
-            this.logError(`Parsing error: ${error}`);
+            this.logError(`Exit code ${code}: parsing error ${error}`);
             reject();
             return;
           }
+        } else if (stderr) {
+          this.logError(`Exit code ${code}: ${stderr}`);
+          reject(new Error(`PHPStan process error: ${stderr}`));
         } else {
           this.logError(`Exit code ${code}: Unexpected error`);
           reject(new Error(`PHPStan process exited with code ${code}`));
