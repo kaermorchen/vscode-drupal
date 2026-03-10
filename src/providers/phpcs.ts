@@ -190,6 +190,10 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
             }
 
             this.collection.set(document.uri, diagnostics);
+
+            const relativePath = workspace.asRelativePath(document.uri, false);
+            this.logInfo(`Successfully validated ${relativePath}`);
+
             resolve();
           } catch (error) {
             stderr += `Parsing error: ${error}`;
@@ -209,6 +213,10 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
   get name() {
     return "phpcs";
+  }
+
+  logInfo(message: string, ...args: unknown[]) {
+    logger.info(`${this.name}: ${message}`, ...args);
   }
 
   logError(message: string | Error) {
