@@ -1,6 +1,7 @@
-import { Disposable } from './disposable';
-import { workspace, WorkspaceConfiguration } from 'vscode';
-import { DrupalWorkspace } from './drupal-workspace';
+import { Disposable } from "./disposable";
+import { workspace, WorkspaceConfiguration } from "vscode";
+import { DrupalWorkspace } from "./drupal-workspace";
+import { logger } from "../utils/logger";
 
 export class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;
@@ -12,7 +13,7 @@ export class DrupalWorkspaceProvider extends Disposable {
   }
 
   get name(): string {
-    throw new Error('Getter name not implemented.');
+    throw new Error("Getter name not implemented.");
   }
 
   get config(): WorkspaceConfiguration {
@@ -25,5 +26,13 @@ export class DrupalWorkspaceProvider extends Disposable {
 
   get source() {
     return `Drupal: ${this.name}`;
+  }
+
+  logInfo(message: string, ...args: unknown[]) {
+    logger.info(`${this.name}: ${message}`, ...args);
+  }
+
+  logError(message: string | Error) {
+    logger.error(`${this.name}: ${message}`);
   }
 }

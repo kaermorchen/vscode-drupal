@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn } from "child_process";
 import {
   Diagnostic,
   DiagnosticSeverity,
@@ -10,10 +10,11 @@ import {
   Position,
   Uri,
   DocumentSelector,
-} from 'vscode';
-import { DrupalWorkspaceProvider } from '../base/drupal-workspace-provider';
+} from "vscode";
+import { DrupalWorkspaceProvider } from "../base/drupal-workspace-provider";
+import { logger } from "../utils/logger";
 
-interface Message {
+interface PHPStanMessage {
   message: string;
   ignorable: boolean;
   line: number;
@@ -27,28 +28,43 @@ export class PHPStanProvider extends DrupalWorkspaceProvider {
     super(arg);
 
     this.docSelector = {
-      language: 'php',
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
+      language: "php",
+      scheme: "file",
+      pattern: this.drupalWorkspace.getRelativePattern("**"),
     };
 
     this.disposables.push(this.collection);
 
     if (window.activeTextEditor) {
-      this.validate(window.activeTextEditor.document);
+      const doc = window.activeTextEditor.document;
+      this.validate(doc).catch(() =>
+        this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+      );
     }
 
     window.onDidChangeActiveTextEditor(
       (editor) => {
         if (editor) {
-          this.validate(editor.document);
+          const doc = editor.document;
+
+          this.validate(doc).catch(() =>
+            this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+          );
         }
       },
       this,
       this.disposables,
     );
 
-    workspace.onDidSaveTextDocument(this.validate, this, this.disposables);
+    workspace.onDidSaveTextDocument(
+      (doc) => {
+        this.validate(doc).catch(() =>
+          this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+        );
+      },
+      this,
+      this.disposables,
+    );
 
     workspace.onDidCloseTextDocument(
       this.clearDiagnostics,
@@ -63,75 +79,114 @@ export class PHPStanProvider extends DrupalWorkspaceProvider {
     }
   }
 
-  async validate(document: TextDocument) {
+  async validate(document: TextDocument): Promise<void> {
+    this.clearDiagnostics(document);
+
     if (languages.match(this.docSelector, document) === 0) {
       return;
     }
 
     const config = this.config;
 
-    if (!config.get('enabled')) {
+    if (!config.get("enabled")) {
       return;
     }
 
-    let executablePath = config.get<string>('executablePath', '');
+    let executablePath = config.get<string>("executablePath", "");
 
-    if (executablePath === '') {
+    if (executablePath === "") {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
-        'vendor/bin/phpstan',
+        "vendor/bin/phpstan",
       ).fsPath;
     }
 
-    const filePath = document.uri.path;
-    const spawnOptions = {
-      cwd: this.drupalWorkspace.workspaceFolder.uri.fsPath,
-      encoding: 'utf8',
-      timeout: 1000 * 60 * 1, // 1 minute
-    };
-    const args = [
-      ...config.get('args', []),
-      '--no-progress',
-      '--error-format=json',
-      'analyse',
-      filePath,
-    ];
+    return new Promise((resolve, reject) => {
+      const filePath = document.uri.path;
+      const spawnOptions = {
+        cwd: this.drupalWorkspace.workspaceFolder.uri.fsPath,
+        encoding: "utf8",
+        timeout: 1000 * 60, // 1 minute
+      };
+      const args = [
+        ...config.get("args", []),
+        "--no-progress",
+        "--error-format=json",
+        "analyse",
+        filePath,
+      ];
 
-    // TODO: add abort signal
-    const process = spawn(executablePath, args, spawnOptions);
+      // TODO: add abort signal
+      const process = spawn(executablePath, args, spawnOptions);
+      let result = "";
+      let stderr: string | Error = "";
 
-    process.stdout.on('data', (data) => {
-      const json = JSON.parse(data.toString());
-      const diagnostics: Diagnostic[] = [];
+      process.stdout.on("data", (data) => {
+        result += data.toString();
+      });
 
-      if (filePath in json.files) {
-        json.files[filePath].messages.forEach((obj: Message) => {
-          const line = document.lineAt(obj.line - 1);
+      process.stderr.on("data", (data) => {
+        if (stderr instanceof String === false) {
+          stderr = "";
+        }
 
-          diagnostics.push({
-            severity: DiagnosticSeverity.Error,
-            message: obj.message,
-            source: this.source,
-            range: new Range(
-              new Position(
-                line.lineNumber,
-                line.firstNonWhitespaceCharacterIndex,
-              ),
-              new Position(line.lineNumber, line.range.end.character),
-            ),
-          });
-        });
-      }
+        stderr += data;
+      });
 
-      this.collection.set(document.uri, diagnostics);
-    });
+      process.on("error", (err) => {
+        stderr = err;
+      });
 
-    process.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
+      process.on("close", (code) => {
+        if (stderr) {
+          this.logError(`Exit code ${code}: ${stderr}`);
+          reject(new Error(`PHPStan process error: ${stderr}`));
+        } else if (result) {
+          try {
+            const json = JSON.parse(result);
+
+            const diagnostics: Diagnostic[] = [];
+            const messages: PHPStanMessage[] =
+              json?.files?.[filePath]?.messages ?? [];
+
+            for (const obj of messages) {
+              const line = document.lineAt(obj.line - 1);
+              const severity = DiagnosticSeverity.Error;
+
+              diagnostics.push({
+                severity,
+                message: obj.message,
+                source: this.source,
+                range: new Range(
+                  new Position(
+                    line.lineNumber,
+                    line.firstNonWhitespaceCharacterIndex,
+                  ),
+                  new Position(line.lineNumber, line.range.end.character),
+                ),
+              });
+            }
+
+            this.collection.set(document.uri, diagnostics);
+
+            const relativePath = workspace.asRelativePath(document.uri, false);
+            this.logInfo(`Successfully validated ${relativePath}`);
+
+            resolve();
+          } catch (error) {
+            this.logError(`Parsing error: ${error}`);
+            reject();
+            return;
+          }
+        } else {
+          this.logError(`Exit code ${code}: Unexpected error`);
+          reject(new Error(`PHPStan process exited with code ${code}`));
+        }
+      });
     });
   }
 
   get name() {
-    return 'phpstan';
+    return "phpstan";
   }
 }

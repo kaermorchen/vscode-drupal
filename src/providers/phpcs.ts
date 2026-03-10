@@ -13,7 +13,6 @@ import {
 } from "vscode";
 import { DrupalWorkspaceProvider } from "../base/drupal-workspace-provider";
 import { getPackage } from "../utils/get-package";
-import { logger } from "../utils/logger";
 
 const LINTER_MESSAGE_TYPE = {
   ERROR: DiagnosticSeverity.Error,
@@ -138,8 +137,6 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       });
 
       process.stderr.on("data", (data) => {
-        this.logError(`process.stderr data ${data}`);
-
         if (stderr instanceof String === false) {
           stderr = "";
         }
@@ -148,8 +145,6 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       });
 
       process.on("error", (err) => {
-        this.logError(`process error ${err}`);
-
         stderr = err;
       });
 
@@ -201,8 +196,8 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
             return;
           }
         } else {
-          this.logError(`Exit code ${code}: ${new Error("Unexpected error")}`);
-          reject();
+          this.logError(`Exit code ${code}: Unexpected error`);
+          reject(new Error(`PHPCS process exited with code ${code}`));
         }
       });
 
@@ -213,13 +208,5 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
   get name() {
     return "phpcs";
-  }
-
-  logInfo(message: string, ...args: unknown[]) {
-    logger.info(`${this.name}: ${message}`, ...args);
-  }
-
-  logError(message: string | Error) {
-    logger.error(`${this.name}: ${message}`);
   }
 }
