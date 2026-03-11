@@ -75,38 +75,54 @@ describe("src/providers/phpstan", () => {
       // Capture the file path from args (last argument)
       capturedFilePath = args[args.length - 1];
       // Return a mock child process that emits JSON output
+      const listeners: { [event: string]: Function[] } = {
+        close: [],
+        error: [],
+      };
+      const stdoutListeners: Function[] = [];
       const mockProcess = {
         stdout: {
           on: (event: string, callback: (data: Buffer) => void) => {
             if (event === "data") {
-              // Simulate phpstan JSON output
-              const output = JSON.stringify({
-                files: {
-                  [capturedFilePath!]: {
-                    messages: [
-                      {
-                        message: "Call to an undefined method Foo::bar().",
-                        ignorable: true,
-                        line: 10,
-                      },
-                      {
-                        message: "Access to an undefined property Foo::$baz.",
-                        ignorable: false,
-                        line: 15,
-                      },
-                    ],
-                  },
-                },
-              });
-              // Simulate async emission
-              setImmediate(() => callback(Buffer.from(output)));
+              stdoutListeners.push(callback);
             }
           },
         },
         stderr: {
           on: (event: string, callback: (data: Buffer) => void) => {},
         },
+        on: (event: string, callback: (arg?: any) => void) => {
+          if (listeners[event]) {
+            listeners[event].push(callback);
+          }
+        },
       };
+      // Simulate async emission of stdout data and then close
+      setImmediate(() => {
+        // Simulate phpstan JSON output
+        const output = JSON.stringify({
+          files: {
+            [capturedFilePath!]: {
+              messages: [
+                {
+                  message: "Call to an undefined method Foo::bar().",
+                  ignorable: true,
+                  line: 10,
+                },
+                {
+                  message: "Access to an undefined property Foo::$baz.",
+                  ignorable: false,
+                  line: 15,
+                },
+              ],
+            },
+          },
+        });
+        // Emit data to all stdout listeners
+        stdoutListeners.forEach((cb) => cb(Buffer.from(output)));
+        // Emit close event with code 0
+        listeners.close.forEach((cb) => cb(0));
+      });
       return mockProcess;
     };
 

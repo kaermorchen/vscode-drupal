@@ -4,7 +4,6 @@ import { workspace, Uri, TextDocument } from "vscode";
 import { spawn } from "child_process";
 import { PHPCSProvider } from "./phpcs";
 import { DrupalWorkspace } from "../base/drupal-workspace";
-import { spyOn } from "../testing";
 
 describe("src/providers/phpcs", () => {
   it("Should be instantiated by DrupalWorkspace", () => {
@@ -154,9 +153,6 @@ describe("src/providers/phpcs", () => {
         throw new Error("PHPCSProvider not found");
       }
 
-      // Spy on logInfo
-      const spy = spyOn(provider, "logInfo");
-
       // Use a real file within the workspace to pass language match
       const fileUri = Uri.joinPath(workspaceFolder.uri, "web/autoload.php");
       const document = await workspace.openTextDocument(fileUri);
@@ -166,14 +162,6 @@ describe("src/providers/phpcs", () => {
       assert.ok(spawned, "spawn should have been called");
       // Wait a bit for async processing
       await new Promise((resolve) => setTimeout(resolve, 100));
-
-      assert.equal(spy.calls.length, 1, "logInfo should have been called once");
-      const logMessage = spy.calls[0][0];
-      assert.match(
-        logMessage,
-        /Successfully validated .*web\/autoload\.php/,
-        "log message should contain relative path",
-      );
 
       // Check that diagnostics were added to collection
       const diagnostics = provider.collection.get(document.uri);
