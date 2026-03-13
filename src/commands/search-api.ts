@@ -6,12 +6,12 @@ import {
   window,
   workspace,
   WorkspaceFolder,
-} from 'vscode';
-import { DrupalWorkspace } from '../base/drupal-workspace';
-import { TextEditorCommand } from './text-editor-command';
+} from "vscode";
+import { DrupalWorkspace } from "../base/drupal-workspace";
+import { TextEditorCommand } from "./text-editor-command";
 
 export class SearchApi extends TextEditorCommand {
-  static id = 'drupal.search-api';
+  static id = "drupal.search-api";
 
   drupalWorkspaces: DrupalWorkspace[];
 
@@ -34,8 +34,8 @@ export class SearchApi extends TextEditorCommand {
       ? editor.document.getWordRangeAtPosition(editor.selection.active)
       : editor.selection;
     const selectedText = editor.document.getText(position);
-    const workspaceFodler = workspace.getWorkspaceFolder(editor.document.uri);
-    const drupalWorkspace = this.getDrupalWorkspace(workspaceFodler);
+    const workspaceFolder = workspace.getWorkspaceFolder(editor.document.uri);
+    const drupalWorkspace = this.getDrupalWorkspace(workspaceFolder);
     let version = 10;
 
     if (drupalWorkspace) {
@@ -49,30 +49,28 @@ export class SearchApi extends TextEditorCommand {
     env.openExternal(uri);
   }
 
-  getDrupalWorkspace(workspaceFodler?: WorkspaceFolder) {
-    return workspaceFodler
-      ? this.drupalWorkspaces.find(
-          (item) => item.workspaceFolder === workspaceFodler,
-        )
-      : undefined;
+  getDrupalWorkspace(workspaceFolder?: WorkspaceFolder) {
+    return this.drupalWorkspaces.find(
+      (item) => item.workspaceFolder === workspaceFolder,
+    );
   }
 
   onActiveEditorChanged() {
     let fileIsInDrupalWorkspace = false;
 
     if (window.activeTextEditor) {
-      const workspaceFodler = workspace.getWorkspaceFolder(
+      const workspaceFolder = workspace.getWorkspaceFolder(
         window.activeTextEditor.document.uri,
       );
 
       fileIsInDrupalWorkspace = Boolean(
-        this.getDrupalWorkspace(workspaceFodler),
+        this.getDrupalWorkspace(workspaceFolder),
       );
     }
 
     commands.executeCommand(
-      'setContext',
-      'drupal.fileIsInDrupalWorkspace',
+      "setContext",
+      "drupal.fileIsInDrupalWorkspace",
       fileIsInDrupalWorkspace,
     );
   }

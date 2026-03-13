@@ -65,7 +65,7 @@ export class GlobalVariablesCompletionProvider
         detail: "Drupal global variable",
       };
 
-      const lastComment = item.leadingComments?.pop();
+      const lastComment = item.leadingComments?.at(-1);
 
       if (lastComment) {
         const summary = parsePHPDocSummary(lastComment.value);

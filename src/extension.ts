@@ -7,8 +7,8 @@ import { getComposer } from "./utils/get-composer";
 import { SearchApi } from "./commands/search-api";
 import { logger } from "./utils/logger";
 
-export async function activate(context: ExtensionContext) {
-  const drupalWorkspaces = [];
+async function getDrupalWorkspaces(): Promise<DrupalWorkspace[]> {
+  const drupalWorkspaces: DrupalWorkspace[] = [];
 
   for (const workspaceFolder of getWorkspaceFolders()) {
     const composer = await getComposer(workspaceFolder);
@@ -21,6 +21,12 @@ export async function activate(context: ExtensionContext) {
       drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
     }
   }
+
+  return drupalWorkspaces;
+}
+
+export async function activate(context: ExtensionContext) {
+  const drupalWorkspaces = await getDrupalWorkspaces();
 
   if (drupalWorkspaces.length === 0) {
     return;
