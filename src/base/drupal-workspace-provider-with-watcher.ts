@@ -6,7 +6,7 @@ import {
 
 export type DrupalWorkspaceProviderWithWatcherParam =
   DrupalWorkspaceProviderParam & {
-    pattern: RelativePattern;
+    include: string;
   };
 
 export class DrupalWorkspaceProviderWithWatcher extends DrupalWorkspaceProvider {
@@ -16,7 +16,7 @@ export class DrupalWorkspaceProviderWithWatcher extends DrupalWorkspaceProvider 
   constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
     super(arg);
 
-    this.pattern = arg.pattern;
+    this.pattern = arg.drupalWorkspace.getRelativePattern(arg.include);
     this.watcher = workspace.createFileSystemWatcher(this.pattern);
 
     this.disposables.push(this.watcher);

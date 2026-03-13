@@ -9,10 +9,8 @@ import {
 import { Global } from "php-parser";
 import { parsePHPDocSummary } from "../utils/doc-parser";
 import phpParser from "../utils/php-parser";
-import {
-  DrupalWorkspaceProviderWithWatcher,
-  DrupalWorkspaceProviderWithWatcherParam,
-} from "../base/drupal-workspace-provider-with-watcher";
+import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
+import { DrupalWorkspaceProviderParam } from "../base/drupal-workspace-provider";
 
 export class GlobalVariablesCompletionProvider
   extends DrupalWorkspaceProviderWithWatcher
@@ -22,8 +20,11 @@ export class GlobalVariablesCompletionProvider
 
   completions: CompletionItem[] | undefined;
 
-  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
-    super(arg);
+  constructor(arg: DrupalWorkspaceProviderParam) {
+    super({
+      drupalWorkspace: arg.drupalWorkspace,
+      include: "web/core/globals.api.php",
+    });
 
     this.disposables.push(
       languages.registerCompletionItemProvider(

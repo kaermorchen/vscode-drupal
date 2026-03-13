@@ -15,31 +15,29 @@ describe("src/base/drupal-workspace-provider-with-watcher", () => {
 
   it("should create watcher and add to disposables", () => {
     const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
-    const pattern = new RelativePattern(
+    const include = "**/*.php";
+    const expectedPattern = new RelativePattern(
       drupalWorkspace.workspaceFolder,
-      "**/*.php",
+      include,
     );
 
     const provider = new ConcreteProviderWithWatcher({
       drupalWorkspace,
-      pattern,
+      include,
     });
 
     assert.ok(provider.watcher);
-    assert.equal(provider.pattern, pattern);
+    assert.deepEqual(provider.pattern, expectedPattern);
     assert.ok(provider.disposables.includes(provider.watcher));
   });
 
   it("should inherit from DrupalWorkspaceProvider", () => {
     const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
-    const pattern = new RelativePattern(
-      drupalWorkspace.workspaceFolder,
-      "**/*.php",
-    );
+    const include = "**/*.php";
 
     const provider = new ConcreteProviderWithWatcher({
       drupalWorkspace,
-      pattern,
+      include,
     });
 
     assert.ok(provider.drupalWorkspace === drupalWorkspace);

@@ -12,11 +12,9 @@ import {
   SnippetString,
 } from "vscode";
 import { po } from "gettext-parser";
-import {
-  DrupalWorkspaceProviderWithWatcher,
-  DrupalWorkspaceProviderWithWatcherParam,
-} from "../base/drupal-workspace-provider-with-watcher";
+import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
 import { getModuleUri } from "../utils/get-module-uri";
+import { DrupalWorkspaceProviderParam } from "../base/drupal-workspace-provider";
 
 const prefixes: Map<string, string[]> = new Map([
   ["php", ["$this->t(", " t(", "TranslatableMarkup("]],
@@ -56,8 +54,11 @@ export class TranslationProvider
     },
   ];
 
-  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
-    super(arg);
+  constructor(arg: DrupalWorkspaceProviderParam) {
+    super({
+      drupalWorkspace: arg.drupalWorkspace,
+      include: "web/modules/custom/**/*.po",
+    });
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
 

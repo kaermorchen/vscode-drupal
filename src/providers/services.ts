@@ -9,10 +9,8 @@ import {
   workspace,
 } from "vscode";
 import { parse } from "yaml";
-import {
-  DrupalWorkspaceProviderWithWatcher,
-  DrupalWorkspaceProviderWithWatcherParam,
-} from "../base/drupal-workspace-provider-with-watcher";
+import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
+import { DrupalWorkspaceProviderParam } from "../base/drupal-workspace-provider";
 
 const prefixes = [
   /Drupal::service\(['"]/,
@@ -31,8 +29,12 @@ export class ServicesCompletionProvider
   completions: CompletionItem[] | undefined;
   completionApiFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
-    super(arg);
+  constructor(arg: DrupalWorkspaceProviderParam) {
+    super({
+      drupalWorkspace: arg.drupalWorkspace,
+      include:
+        "web/{core,core/modules/*,modules/contrib/*,modules/custom/*}/*.services.yml",
+    });
 
     this.watcher.onDidChange(this.clearCache, this, this.disposables);
 
