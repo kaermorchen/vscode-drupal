@@ -6,6 +6,23 @@ import { PHPCBFProvider } from "./phpcbf";
 import { DrupalWorkspace } from "../base/drupal-workspace";
 
 describe("src/providers/phpcbf", () => {
+  it("Should be instantiated by DrupalWorkspace", () => {
+    const workspaceFolder = workspace.workspaceFolders![0];
+    assert.equal(workspaceFolder.name, "drupal-10");
+    const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+
+    const provider: PHPCBFProvider | undefined =
+      drupalWorkspace.disposables.find((d) => d instanceof PHPCBFProvider);
+
+    if (!provider) {
+      throw new Error("PHPCBFProvider not found");
+    }
+
+    assert.equal(provider.name, "phpcbf");
+    assert.ok(provider.extensions);
+    assert.ok(provider.documentFilters.length > 0);
+  });
+
   it("Should not format when disabled", async () => {
     const config = workspace.getConfiguration("drupal.phpcbf");
     const original = config.get("enabled");
@@ -192,6 +209,97 @@ describe("src/providers/phpcbf", () => {
       const edits = await provider.provideDocumentFormattingEdits(document);
       assert.ok(spawned, "spawn should have been called");
       assert.deepEqual(edits, []);
+    } finally {
+      (spawn as any) = originalSpawn;
+      await config.update("enabled", originalEnabled, true);
+      await config.update("args", originalArgs, true);
+    }
+  });
+
+  it("Should reject when phpcbf outputs to stderr", async () => {
+    const config = workspace.getConfiguration("drupal.phpcbf");
+    const originalEnabled = config.get("enabled");
+    const originalArgs = config.get("args");
+    await config.update("enabled", true, true);
+    await config.update("args", [], true);
+
+    const originalSpawn = spawn;
+    let spawned = false;
+    (spawn as any) = (executablePath: string, args: string[], options: any) => {
+      spawned = true;
+      const mockProcess = {
+        stdin: {
+          write: (data: string) => {},
+          end: () => {
+            // After stdin ends, simulate stderr data and then close
+            setImmediate(() => {
+              // Emit stderr data
+              if (mockProcess.stderr.listeners.data) {
+                mockProcess.stderr.listeners.data.forEach((cb) =>
+                  cb(Buffer.from("Some error message")),
+                );
+              }
+              // Emit close event with code 0
+              mockProcess.listeners.close.forEach((cb) => cb(0));
+            });
+          },
+        },
+        stdout: {
+          listeners: { data: [] as Function[] },
+          on: (event: string, callback: (data: Buffer) => void) => {
+            if (event === "data") {
+              mockProcess.stdout.listeners.data.push(callback);
+            }
+          },
+        },
+        stderr: {
+          listeners: { data: [] as Function[] },
+          on: (event: string, callback: (data: Buffer) => void) => {
+            if (event === "data") {
+              mockProcess.stderr.listeners.data.push(callback);
+            }
+          },
+        },
+        listeners: { close: [] as Function[] },
+        on: (event: string, callback: (code?: number) => void) => {
+          if (event === "close") {
+            mockProcess.listeners.close.push(callback);
+          }
+        },
+      };
+      return mockProcess;
+    };
+
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = drupalWorkspace.disposables.find(
+        (d) => d instanceof PHPCBFProvider,
+      ) as PHPCBFProvider;
+
+      const documentUri = Uri.joinPath(workspaceFolder.uri, "web/test.php");
+      const originalText = '<?php echo "hi";';
+      const document = {
+        uri: documentUri,
+        getText: () => originalText,
+        languageId: "php",
+        positionAt: (offset: number) => ({ line: 0, character: offset }),
+        lineAt: (line: number) => ({
+          text: originalText,
+          range: {
+            start: { line, character: 0 },
+            end: { line, character: originalText.length },
+          },
+        }),
+        lineCount: 1,
+      } as unknown as TextDocument;
+
+      await assert.rejects(
+        () => provider.provideDocumentFormattingEdits(document),
+        /PHPCBF process error/,
+        "Should reject with stderr error",
+      );
+      assert.ok(spawned, "spawn should have been called");
     } finally {
       (spawn as any) = originalSpawn;
       await config.update("enabled", originalEnabled, true);
