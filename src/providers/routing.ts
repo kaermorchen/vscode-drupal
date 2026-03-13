@@ -10,7 +10,10 @@ import {
 } from "vscode";
 import { basename } from "path";
 import { parse } from "yaml";
-import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
+import {
+  DrupalWorkspaceProviderWithWatcher,
+  DrupalWorkspaceProviderWithWatcherParam,
+} from "../base/drupal-workspace-provider-with-watcher";
 
 const prefixes = [
   /Link::createFromRoute\(['"].*['"], ['"]$/,
@@ -27,9 +30,7 @@ export class RoutingCompletionProvider
   completions: CompletionItem[] | undefined;
   completionApiFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
-  ) {
+  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
     super(arg);
 
     this.watcher.onDidChange(this.clearCache, this, this.disposables);

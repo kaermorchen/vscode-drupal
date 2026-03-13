@@ -10,16 +10,19 @@ import {
   Uri,
   workspace,
   SnippetString,
-} from 'vscode';
-import { po } from 'gettext-parser';
-import { DrupalWorkspaceProviderWithWatcher } from '../base/drupal-workspace-provider-with-watcher';
-import { getModuleUri } from '../utils/get-module-uri';
+} from "vscode";
+import { po } from "gettext-parser";
+import {
+  DrupalWorkspaceProviderWithWatcher,
+  DrupalWorkspaceProviderWithWatcherParam,
+} from "../base/drupal-workspace-provider-with-watcher";
+import { getModuleUri } from "../utils/get-module-uri";
 
 const prefixes: Map<string, string[]> = new Map([
-  ['php', ['$this->t(', ' t(', 'TranslatableMarkup(']],
-  ['javascript', ['Drupal.t(']],
-  ['yaml', ['_title: ', 'title: ']],
-  ['twig', ['{{', '{%']],
+  ["php", ["$this->t(", " t(", "TranslatableMarkup("]],
+  ["javascript", ["Drupal.t("]],
+  ["yaml", ["_title: ", "title: "]],
+  ["twig", ["{{", "{%"]],
 ]);
 
 export class TranslationProvider
@@ -30,32 +33,30 @@ export class TranslationProvider
 
   selectors: DocumentFilter[] = [
     {
-      language: 'php',
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
+      language: "php",
+      scheme: "file",
+      pattern: this.drupalWorkspace.getRelativePattern("**"),
     },
     {
-      language: 'javascript',
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**/*.js'),
+      language: "javascript",
+      scheme: "file",
+      pattern: this.drupalWorkspace.getRelativePattern("**/*.js"),
     },
     {
-      language: 'yaml',
-      scheme: 'file',
+      language: "yaml",
+      scheme: "file",
       pattern: this.drupalWorkspace.getRelativePattern(
-        '**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml',
+        "**/*.{routing,links.menu,links.task,links.action,links.contextual}.yml",
       ),
     },
     {
-      language: 'twig',
-      scheme: 'file',
-      pattern: this.drupalWorkspace.getRelativePattern('**'),
+      language: "twig",
+      scheme: "file",
+      pattern: this.drupalWorkspace.getRelativePattern("**"),
     },
   ];
 
-  constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
-  ) {
+  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
     super(arg);
 
     this.watcher.onDidChange(this.parseFiles, this, this.disposables);
@@ -91,11 +92,11 @@ export class TranslationProvider
 
       for (const context in translations) {
         for (const item in translations[context]) {
-          if (item !== '') {
+          if (item !== "") {
             completions.push({
               label: item,
               kind: CompletionItemKind.Text,
-              detail: 'translation',
+              detail: "translation",
             });
           }
         }
@@ -121,11 +122,11 @@ export class TranslationProvider
       const completions = this.moduleCompletions.get(moduleUri.fsPath);
 
       switch (document.languageId) {
-        case 'twig':
+        case "twig":
           return this.twigCompletionItems(document, position, completions);
-        case 'php':
+        case "php":
           return this.phpCompletionItems(document, position, completions);
-        case 'javascript':
+        case "javascript":
           return this.jsCompletionItems(document, position, completions);
       }
 
@@ -144,11 +145,11 @@ export class TranslationProvider
 
     return completions?.map((item) => {
       const label =
-        typeof item.label === 'string' ? item.label : item.label.label;
+        typeof item.label === "string" ? item.label : item.label.label;
       const variables = this.getTranslateArgVariables(label);
       const tArgs = variables
-        ? `, [${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}]`
-        : '';
+        ? `, [${variables.map((item, i) => `"${item}": $${i + 1}`).join(", ")}]`
+        : "";
       item.insertText = new SnippetString(
         `${item.label}${quotationMark}${tArgs})$0`,
       );
@@ -172,11 +173,11 @@ export class TranslationProvider
 
     return completions?.map((item) => {
       const label =
-        typeof item.label === 'string' ? item.label : item.label.label;
+        typeof item.label === "string" ? item.label : item.label.label;
       const variables = this.getTranslateArgVariables(label);
       const tArgs = variables
-        ? `({${variables.map((item, i) => `"${item}": $${i + 1}`).join(', ')}})`
-        : '';
+        ? `({${variables.map((item, i) => `"${item}": $${i + 1}`).join(", ")}})`
+        : "";
 
       item.insertText = new SnippetString(
         `${item.label}${quotationMark}|t${tArgs}`,
@@ -201,11 +202,11 @@ export class TranslationProvider
 
     return completions?.map((item) => {
       const label =
-        typeof item.label === 'string' ? item.label : item.label.label;
+        typeof item.label === "string" ? item.label : item.label.label;
       const variables = this.getTranslateArgVariables(label);
       const tArgs = variables
-        ? `, {${variables.map((item, i) => `'${item}': $${i + 1}`).join(', ')}}`
-        : '';
+        ? `, {${variables.map((item, i) => `'${item}': $${i + 1}`).join(", ")}}`
+        : "";
 
       item.insertText = new SnippetString(
         `${item.label}${quotationMark}${tArgs})$0`,

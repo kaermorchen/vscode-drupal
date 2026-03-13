@@ -3,10 +3,14 @@ import { workspace, WorkspaceConfiguration } from "vscode";
 import { DrupalWorkspace } from "./drupal-workspace";
 import { logger } from "../utils/logger";
 
+export type DrupalWorkspaceProviderParam = {
+  drupalWorkspace: DrupalWorkspace;
+};
+
 export class DrupalWorkspaceProvider extends Disposable {
   drupalWorkspace: DrupalWorkspace;
 
-  constructor(arg: { drupalWorkspace: DrupalWorkspace }) {
+  constructor(arg: DrupalWorkspaceProviderParam) {
     super();
 
     this.drupalWorkspace = arg.drupalWorkspace;

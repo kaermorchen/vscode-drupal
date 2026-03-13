@@ -14,7 +14,10 @@ import { getModuleMachineName } from "../utils/get-module-machine-name";
 import { parsePHPDocSummary } from "../utils/doc-parser";
 import phpParser from "../utils/php-parser";
 import { getName } from "../utils/get-name";
-import { DrupalWorkspaceProviderWithWatcher } from "../base/drupal-workspace-provider-with-watcher";
+import {
+  DrupalWorkspaceProviderWithWatcher,
+  DrupalWorkspaceProviderWithWatcherParam,
+} from "../base/drupal-workspace-provider-with-watcher";
 
 const NODE_COMPLETION_ITEM = {
   function: CompletionItemKind.Function,
@@ -30,9 +33,7 @@ export class HookCompletionProvider
   completionApiFileCache: Map<string, CompletionItem[]> = new Map();
   completionModuleFileCache: Map<string, CompletionItem[]> = new Map();
 
-  constructor(
-    arg: ConstructorParameters<typeof DrupalWorkspaceProviderWithWatcher>[0],
-  ) {
+  constructor(arg: DrupalWorkspaceProviderWithWatcherParam) {
     super(arg);
 
     this.watcher.onDidChange(this.clearCache, this, this.disposables);
