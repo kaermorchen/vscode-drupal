@@ -66,19 +66,7 @@ export class PHPCBFProvider
         encoding: "utf8",
         timeout: 1000 * 60 * 1, // 1 minute
       };
-      const args = [
-        ...config.get("args", []),
-        "-q",
-        "--config-set",
-        "ignore_warnings_on_exit",
-        "1",
-        // "--config-set ignore_errors_on_exit 1",
-        // "ignore_warnings_on_exit 1",
-        // `--stdin-path=${filePath}`,
-        // `--extensions=${this.extensions}`,
-        // "-",
-        filePath,
-      ];
+      const args = [...config.get("args", []), "-q", "-"];
 
       // TODO: add abort signal
       const process = spawn(executablePath, args, spawnOptions);
@@ -103,11 +91,6 @@ export class PHPCBFProvider
       });
 
       process.on("close", (code) => {
-        console.log("close");
-        console.log("code", code);
-        console.log("stderr", stderr);
-        console.log("result", result.substring(0, 100));
-
         if (stderr) {
           this.logError(`Exit code ${code}: ${stderr}`);
           reject(new Error(`PHPCBF process error: ${stderr}`));
@@ -117,6 +100,15 @@ export class PHPCBFProvider
 
           resolve([]);
         } else if (originalText !== result) {
+          if (/^ERROR/.test(result)) {
+            const error = new Error(result);
+
+            this.logError(error);
+            reject(error);
+
+            return;
+          }
+
           const relativePath = workspace.asRelativePath(document.uri, false);
           this.logInfo(`Successfully formatted ${relativePath}`);
 
