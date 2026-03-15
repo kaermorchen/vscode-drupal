@@ -8,36 +8,40 @@ import { SearchApi } from "./commands/search-api";
 import { logger } from "./utils/logger";
 
 export async function activate(context: ExtensionContext) {
-  const drupalWorkspaces = [];
+  try {
+    const drupalWorkspaces = [];
 
-  for (const workspaceFolder of getWorkspaceFolders()) {
-    const composer = await getComposer(workspaceFolder);
+    for (const workspaceFolder of getWorkspaceFolders()) {
+      const composer = await getComposer(workspaceFolder);
 
-    if (!composer) {
-      continue;
+      if (!composer) {
+        continue;
+      }
+
+      if ("drupal/core-recommended" in composer.require) {
+        drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
+      }
     }
 
-    if ("drupal/core-recommended" in composer.require) {
-      drupalWorkspaces.push(new DrupalWorkspace(workspaceFolder));
+    if (drupalWorkspaces.length === 0) {
+      return;
     }
+
+    context.subscriptions.push(
+      ...drupalWorkspaces,
+
+      // Common
+      new DrupalStatusBar(),
+
+      // Commands
+      new SearchApi(drupalWorkspaces),
+      new ShowOutputChannel(),
+    );
+
+    logger.info("Drupal extension activated");
+  } catch (error) {
+    logger.error("Failed to activate Drupal extension", error);
   }
-
-  if (drupalWorkspaces.length === 0) {
-    return;
-  }
-
-  context.subscriptions.push(
-    ...drupalWorkspaces,
-
-    // Common
-    new DrupalStatusBar(),
-
-    // Commands
-    new SearchApi(drupalWorkspaces),
-    new ShowOutputChannel(),
-  );
-
-  logger.info("Drupal extension activated");
 }
 
 export function deactivate() {}
