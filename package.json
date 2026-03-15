@@ -24,9 +24,10 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -p ./ -w",
+    "vscode:prepublish": "npm run compile:prod",
+    "compile": "node esbuild.config.js",
+    "watch": "node esbuild.config.js --watch",
+    "compile:prod": "NODE_ENV=production node esbuild.config.js",
     "release": "release-it",
     "test": "rm -rf out && npm run compile && vscode-test",
     "typecheck": "tsc -p ./ --noEmit"
@@ -45,6 +46,7 @@
     "@types/vscode": "1.100.0",
     "@vscode/test-cli": "0.0.12",
     "@vscode/test-electron": "2.5.2",
+    "esbuild": "^0.27.4",
     "mocha": "11.7.5",
     "release-it": "19.2.4",
     "typescript": "5.9.3"
