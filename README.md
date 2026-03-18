@@ -9,8 +9,8 @@ This extension supports only Drupal projects that use the Composer template [dru
 - twig completion
 - service completion
 - global variables completion
-- code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) ([phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
-- document formatting according to standards ([phpcbf](https://github.com/squizlabs/PHP_CodeSniffer))
+- code checking [Drupal coding standards](https://www.drupal.org/docs/develop/standards) ([phpcs](https://github.com/PHPCSStandards/PHP_CodeSniffer), [coder](https://www.drupal.org/project/coder))
+- document formatting according to standards ([phpcbf](https://github.com/PHPCSStandards/PHP_CodeSniffer))
 - searching in Drupal API Documentation
 - translation autocomplete (php, twig, js)
 - validation and autocomplete for YAML files

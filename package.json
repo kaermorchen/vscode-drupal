@@ -186,7 +186,7 @@
             "scope": "resource",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enables [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) checker"
+            "markdownDescription": "Enables [phpcs](https://github.com/PHPCSStandards/PHP_CodeSniffer) checker"
           },
           "drupal.phpcs.executablePath": {
             "order": 11,
@@ -201,14 +201,14 @@
             "default": [
               "--standard=Drupal,DrupalPractice"
             ],
-            "markdownDescription": "[Argument list](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage) of phpcs"
+            "markdownDescription": "[Argument list](https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Usage) of phpcs"
           },
           "drupal.phpcbf.enabled": {
             "order": 20,
             "scope": "resource",
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enables [phpcbf](https://github.com/squizlabs/PHP_CodeSniffer) code formatter"
+            "markdownDescription": "Enables [phpcbf](https://github.com/PHPCSStandards/PHP_CodeSniffer) code formatter"
           },
           "drupal.phpcbf.executablePath": {
             "order": 21,
@@ -223,7 +223,7 @@
             "default": [
               "--standard=Drupal,DrupalPractice"
             ],
-            "markdownDescription": "[Argument list](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically) of phpcbf"
+            "markdownDescription": "[Argument list](https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically) of phpcbf"
           },
           "drupal.phpstan.enabled": {
             "order": 30,
