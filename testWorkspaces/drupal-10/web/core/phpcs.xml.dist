@@ -160,7 +160,7 @@
   </rule>
   <rule ref="DrupalPractice.CodeAnalysis.VariableAnalysis.UndefinedVariable">
     <!-- Setting severity to 0 to completely disable an error message in this sniff, without excluding the whole sniff -->
-    <!-- See https://github.com/squizlabs/PHP_CodeSniffer/wiki/Configuration-Options#changing-the-default-severity-levels -->
+    <!-- See https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Configuration-Options#changing-the-default-severity-levels -->
     <severity>0</severity>
   </rule>
   <rule ref="DrupalPractice.Commenting.ExpectedException"/>
