@@ -18,6 +18,8 @@ This extension supports only Drupal projects that use the Composer template [dru
 
 ## Install
 
+Install from [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Stanislav.vscode-drupal "VSCode Drupal") or [Open VSX Registry](https://open-vsx.org/extension/Stanislav/vscode-drupal "VSCode Drupal")
+
 Code checking and formatting require the following packages:
 
 ```bash
