@@ -14,7 +14,7 @@ This extension supports only Drupal projects that use the Composer template [dru
 - searching in Drupal API Documentation
 - translation autocomplete (php, twig, js)
 - validation and autocomplete for YAML files
-- PHPStan analysis ([PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal))
+- PHPStan analysis ([PHPStan](https://phpstan.org/), [phpstan-drupal](https://github.com/mglaman/phpstan-drupal)) (disabled by default)
 
 ## Install
 
