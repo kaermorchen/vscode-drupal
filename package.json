@@ -37,7 +37,7 @@
     "gettext-parser": "9.0.2",
     "php-parser": "3.4.0",
     "vscode-uri": "3.1.0",
-    "yaml": "2.8.2"
+    "yaml": "2.8.3"
   },
   "devDependencies": {
     "@release-it-plugins/lerna-changelog": "8.0.1",
