@@ -35,7 +35,7 @@
   "dependencies": {
     "@rightcapital/phpdoc-parser": "0.6.1",
     "gettext-parser": "9.0.2",
-    "php-parser": "3.5.0",
+    "php-parser": "3.5.1",
     "vscode-uri": "3.1.0",
     "yaml": "2.8.3"
   },
