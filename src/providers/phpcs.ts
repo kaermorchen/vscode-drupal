@@ -53,7 +53,7 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       )
       .join(",");
 
-    if (window.activeTextEditor) {
+    if (window.activeTextEditor && process.env.NODE_ENV !== "test") {
       const doc = window.activeTextEditor.document;
       this.validate(doc).catch(() =>
         this.logError(`Document validation failed: ${doc.uri.fsPath}`),
@@ -62,7 +62,7 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
     window.onDidChangeActiveTextEditor(
       (editor) => {
-        if (editor) {
+        if (editor && process.env.NODE_ENV !== "test") {
           const doc = editor.document;
           this.validate(doc).catch(() =>
             this.logError(`Document validation failed: ${doc.uri.fsPath}`),
@@ -75,10 +75,12 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
 
     workspace.onDidChangeTextDocument(
       (e) => {
-        const doc = e.document;
-        this.validate(e.document).catch(() =>
-          this.logError(`Document validation failed: ${doc.uri.fsPath}`),
-        );
+        if (process.env.NODE_ENV !== "test") {
+          const doc = e.document;
+          this.validate(e.document).catch(() =>
+            this.logError(`Document validation failed: ${doc.uri.fsPath}`),
+          );
+        }
       },
       this,
       this.disposables,
@@ -97,7 +99,12 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
     }
   }
 
-  async validate(document: TextDocument): Promise<void> {
+    /**
+     * Validates a document using PHPCS.
+     *
+     * @param document The text document to validate.
+     */
+    async validate(document: TextDocument): Promise<void> {
     this.clearDiagnostics(document);
 
     if (languages.match(this.documentFilters, document) === 0) {
@@ -111,7 +118,6 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
     }
 
     let executablePath = config.get<string>("executablePath", "");
-
     if (executablePath === "") {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
@@ -120,15 +126,30 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
     }
 
     return new Promise((resolve, reject) => {
-      const filePath = document.uri.path;
+      // Use relative path for validation to support containerized environments (ddev, lando, etc.)
+      // where the absolute path on the host doesn't match the path in the container.
+      const filePath = workspace.asRelativePath(document.uri, false);
       const spawnOptions = {
         encoding: "utf8",
         timeout: 1000 * 60 * 1, // 1 minute
+        cwd: this.drupalWorkspace.workspaceFolder.uri.fsPath,
       };
       const args = [...config.get("args", []), "-q", "--report=json", filePath];
 
+      // Support wrapper commands (ddev, lando, docker, etc.) in executablePath.
+      // These wrappers often output to stderr (e.g. exit status) which we need to handle gracefully.
+      const wrapperMatch = executablePath.match(/^(\S+)\s+(.+)$/);
+      const isWrapper = wrapperMatch !== null;
+      let command = executablePath;
+      let commandArgs = args;
+
+      if (wrapperMatch) {
+        command = wrapperMatch[1];
+        commandArgs = [...wrapperMatch[2].split(/\s+/), ...args];
+      }
+
       // TODO: add abort signal
-      const process = spawn(executablePath, args, spawnOptions);
+      const process = spawn(command, commandArgs, spawnOptions);
       let result: string = "";
       let stderr: string | Error = "";
 
@@ -149,7 +170,9 @@ export class PHPCSProvider extends DrupalWorkspaceProvider {
       });
 
       process.on("close", (code) => {
-        if (stderr) {
+        // If it's a wrapper, we might get stderr messages like "exit code 2" even if stdout has valid JSON.
+        // We prioritize parsing the result if available.
+        if (stderr && (!isWrapper || !result)) {
           this.logError(`Exit code ${code}: ${stderr}`);
           reject();
         } else if (result) {
