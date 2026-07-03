@@ -42,7 +42,7 @@
   "devDependencies": {
     "@release-it-plugins/lerna-changelog": "8.0.1",
     "@types/gettext-parser": "9.0.0",
-    "@types/node": "22",
+    "@types/node": "25",
     "@types/vscode": "1.100.0",
     "@vscode/test-cli": "0.0.12",
     "@vscode/test-electron": "2.5.2",
