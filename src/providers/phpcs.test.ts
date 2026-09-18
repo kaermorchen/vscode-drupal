@@ -178,4 +178,79 @@ describe("src/providers/phpcs", () => {
       await config.update("args", originalArgs, true);
     }
   });
+
+  it("Should handle containerized executable path (ddev, lando, docker)", async () => {
+    const config = workspace.getConfiguration("drupal.phpcs");
+    const originalExec = config.get("executablePath");
+    const originalEnabled = config.get("enabled");
+    await config.update("enabled", true, true);
+
+    const originalSpawn = spawn;
+    let spawnCalledWith: any = null;
+    const handledCommands = ["ddev", "lando", "docker", "mytool"];
+    (spawn as any) = (command: string, args: string[], options: any) => {
+      if (handledCommands.includes(command)) {
+        spawnCalledWith = { command, args, options };
+      }
+      // Return a minimal mock that allows the provider to "finish"
+      return {
+        stdout: { on: () => {} },
+        stderr: { on: () => {} },
+        on: (event: string, cb: any) => { if (event === "close") setImmediate(() => cb(0)); },
+      };
+    };
+
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = new PHPCSProvider({ drupalWorkspace });
+      const document = await workspace.openTextDocument(Uri.joinPath(workspaceFolder.uri, "web/autoload.php"));
+
+      // Test DDEV
+      await config.update("executablePath", "ddev exec vendor/bin/phpcs", true);
+      spawnCalledWith = null;
+      await provider.validate(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "ddev");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+      assert.ok(
+        spawnCalledWith?.args.includes("web/autoload.php"),
+        "Args should include relative file path",
+      );
+
+      // Test Lando
+      await config.update("executablePath", "lando phpcs", true);
+      spawnCalledWith = null;
+      await provider.validate(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "lando");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+      assert.ok(
+        spawnCalledWith?.args.includes("web/autoload.php"),
+        "Args should include relative file path",
+      );
+
+      // Test a generic wrapper
+      await config.update("executablePath", "mytool exec phpcs", true);
+      spawnCalledWith = null;
+      await provider.validate(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "mytool");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+      assert.ok(
+        spawnCalledWith?.args.includes("web/autoload.php"),
+        "Args should include relative file path",
+      );
+    } finally {
+      (spawn as any) = originalSpawn;
+      await config.update("executablePath", originalExec, true);
+      await config.update("enabled", originalEnabled, true);
+    }
+  });
 });

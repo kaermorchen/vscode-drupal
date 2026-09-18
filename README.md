@@ -36,6 +36,7 @@ Package paths can be specified in the extension settings.
 
 For YAML files, the [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) extension must be installed.
 
+
 ## Settings
 
 Extension settings can be configured in VS Code settings (`settings.json`). The following `drupal.*` settings are available:
@@ -43,7 +44,7 @@ Extension settings can be configured in VS Code settings (`settings.json`). The 
 ### PHP CodeSniffer (phpcs)
 
 - `drupal.phpcs.enabled` (boolean, default: `true`) – Enables [phpcs](https://github.com/PHPCSStandards/PHP_CodeSniffer) checker.
-- `drupal.phpcs.executablePath` (string) – Path to phpcs. Will use `vendor/bin/phpcs` if empty.
+- `drupal.phpcs.executablePath` (string) – Path to phpcs. Will use `vendor/bin/phpcs` if empty. **Supports DDEV, Lando, and Docker:** set to `ddev exec vendor/bin/phpcs` to run inside a container.
 - `drupal.phpcs.args` (array, default: `["--standard=Drupal,DrupalPractice"]`) – Argument list of phpcs.
 
 You can also place a `phpcs.xml` file in the project root, and phpcs will automatically read it (no need to specify `--standard` in args).
@@ -51,18 +52,20 @@ You can also place a `phpcs.xml` file in the project root, and phpcs will automa
 ### PHP Code Beautifier and Fixer (phpcbf)
 
 - `drupal.phpcbf.enabled` (boolean, default: `true`) – Enables [phpcbf](https://github.com/PHPCSStandards/PHP_CodeSniffer) code formatter.
-- `drupal.phpcbf.executablePath` (string) – Path to phpcbf. Will use `vendor/bin/phpcbf` if empty.
+- `drupal.phpcbf.executablePath` (string) – Path to phpcbf. Will use `vendor/bin/phpcbf` if empty. **Supports DDEV, Lando, and Docker:** set to `ddev exec vendor/bin/phpcbf` to run inside a container.
 - `drupal.phpcbf.args` (array, default: `["--standard=Drupal,DrupalPractice"]`) – Argument list of phpcbf.
 
 ### PHPStan
 
 - `drupal.phpstan.enabled` (boolean, default: `false`) – Enables [phpstan](https://phpstan.org/) analyse.
-- `drupal.phpstan.executablePath` (string) – Path to phpstan. Will use `vendor/bin/phpstan` if empty.
+- `drupal.phpstan.executablePath` (string) – Path to phpstan. Will use `vendor/bin/phpstan` if empty. **Supports DDEV, Lando, and Docker:** set to `ddev exec vendor/bin/phpstan` to run inside a container.
 - `drupal.phpstan.args` (array, default: `[]`) – Argument list of phpstan.
-  You can also place a `phpstan.neon` or `phpstan.neon.dist` file in the project root for configuration.
 
-Example:
+**Container and Custom Wrappers:**
 
+You can use DDEV, Lando, Docker, or any other supported wrapper by specifying the full command in the executable path (e.g., `ddev exec vendor/bin/phpcs`). The extension will automatically split the command and arguments, allowing you to run your tools inside containers.
+
+You can also place a `phpcs.xml` file in the project root, and phpcs will automatically read it (no need to specify `--standard` in args).
 ```json
 "drupal.phpstan.args": [
   "--level=4"
