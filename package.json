@@ -2,7 +2,7 @@
   "name": "vscode-drupal",
   "displayName": "Drupal",
   "description": "A Drupal extension for VS Code",
-  "version": "1.1.1",
+  "version": "1.1.6",
   "publisher": "stanislav",
   "repository": "https://github.com/kaermorchen/vscode-drupal",
   "author": "Stanislav Romanov <kaermorchen@gmail.com>",
@@ -26,10 +26,10 @@
   "scripts": {
     "vscode:prepublish": "npm run compile:prod",
     "compile": "node esbuild.config.js",
+    "test": "npx tsc -p tsconfig.json --noEmit false --outDir out && NODE_ENV=test npx vscode-test",
     "watch": "node esbuild.config.js --watch",
     "compile:prod": "NODE_ENV=production node esbuild.config.js",
     "release": "release-it",
-    "test": "rm -rf out && npm run compile && vscode-test",
     "typecheck": "tsc -p ./ --noEmit"
   },
   "dependencies": {

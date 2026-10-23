@@ -42,7 +42,13 @@ export class PHPCBFProvider
       .join(",");
   }
 
-  async provideDocumentFormattingEdits(
+    /**
+     * Provide formatting edits for a document using PHPCBF.
+     *
+     * @param document The text document to format.
+     * @returns An array of text edits to apply.
+     */
+    async provideDocumentFormattingEdits(
     document: TextDocument,
   ): Promise<TextEdit[]> {
     const config = this.config;
@@ -52,7 +58,6 @@ export class PHPCBFProvider
     }
 
     let executablePath = config.get<string>("executablePath", "");
-
     if (executablePath === "") {
       executablePath = Uri.joinPath(
         this.drupalWorkspace.workspaceFolder.uri,
@@ -61,15 +66,29 @@ export class PHPCBFProvider
     }
 
     return new Promise((resolve, reject) => {
+      // Use relative path for formatting to support containerized environments (ddev, lando, etc.)
       const filePath = document.uri.path;
       const spawnOptions = {
         encoding: "utf8",
         timeout: 1000 * 60 * 1, // 1 minute
+        cwd: this.drupalWorkspace.workspaceFolder.uri.fsPath,
       };
       const args = [...config.get("args", []), "-q", "-"];
 
+      // Support wrapper commands (ddev, lando, docker, etc.) in executablePath.
+      // These wrappers often output to stderr (e.g. exit status) which we need to handle gracefully.
+      const wrapperMatch = executablePath.match(/^(\S+)\s+(.+)$/);
+      const isWrapper = wrapperMatch !== null;
+      let command = executablePath;
+      let commandArgs = args;
+
+      if (wrapperMatch) {
+        command = wrapperMatch[1];
+        commandArgs = [...wrapperMatch[2].split(/\s+/), ...args];
+      }
+
       // TODO: add abort signal
-      const process = spawn(executablePath, args, spawnOptions);
+      const process = spawn(command, commandArgs, spawnOptions);
       const originalText = document.getText();
       let result = "";
       let stderr: string | Error = "";
@@ -91,7 +110,19 @@ export class PHPCBFProvider
       });
 
       process.on("close", (code) => {
-        if (stderr) {
+        // PHPCBF exit codes:
+        // 0: No fixable errors found
+        // 1: All fixable errors were fixed
+        // 2: Fixable errors were found but some could not be fixed
+        // 3: Processing error
+
+        // If it's a wrapper, we might get stderr messages like "exit code 1" even if stdout has valid output.
+        // If we have a result and exit code is 0 or 1, we should proceed.
+        // Also if exit code is 2, we might still want to apply partial fixes if result is different from original.
+
+        const isSuccessExitCode = code === 0 || code === 1;
+
+        if (stderr && (!isWrapper || !result || !isSuccessExitCode)) {
           this.logError(`Exit code ${code}: ${stderr}`);
           reject(new Error(`PHPCBF process error: ${stderr}`));
         } else if (originalText === result) {
@@ -118,12 +149,14 @@ export class PHPCBFProvider
           );
 
           resolve([new TextEdit(range, result)]);
-        } else if (code !== 0) {
+        } else if (code !== 0 && code !== 1) {
           const error = new Error(`PHPCBF process exited with code ${code}`);
 
           this.logError(error);
           reject(error);
         } else {
+          // This case should be unreachable if result is string and covered by === and !==
+          // But technically if code is 0/1 and result === originalText, we already resolved above.
           const error = new Error(`Unexpected error`);
 
           this.logError(error);

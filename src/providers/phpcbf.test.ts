@@ -306,4 +306,128 @@ describe("src/providers/phpcbf", () => {
       await config.update("args", originalArgs, true);
     }
   });
+
+  it("Should handle containerized executable path (ddev, lando, docker)", async () => {
+    const config = workspace.getConfiguration("drupal.phpcbf");
+    const originalExec = config.get("executablePath");
+    const originalEnabled = config.get("enabled");
+    await config.update("enabled", true, true);
+
+    const originalSpawn = spawn;
+    let spawnCalledWith: any = null;
+    const handledCommands = ["ddev", "lando", "docker"];
+    (spawn as any) = (command: string, args: string[], options: any) => {
+      if (handledCommands.includes(command)) {
+        spawnCalledWith = { command, args, options };
+      }
+      return {
+        stdin: { write: () => {}, end: () => {} },
+        stdout: { on: () => {} },
+        stderr: { on: () => {} },
+        on: (event: string, cb: any) => { if (event === "close") setImmediate(() => cb(0)); },
+      };
+    };
+
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = new PHPCBFProvider({ drupalWorkspace });
+      const documentUri = Uri.joinPath(workspaceFolder.uri, "web/autoload.php");
+      const document = await workspace.openTextDocument(documentUri);
+
+      // Test DDEV
+      await config.update("executablePath", "ddev exec vendor/bin/phpcbf", true);
+      spawnCalledWith = null;
+      await provider.provideDocumentFormattingEdits(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "ddev");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+
+      // Test Lando
+      await config.update("executablePath", "lando phpcbf", true);
+      spawnCalledWith = null;
+      await provider.provideDocumentFormattingEdits(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "lando");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+
+      // Test Docker
+      await config.update("executablePath", "docker exec -it my_container vendor/bin/phpcbf", true);
+      spawnCalledWith = null;
+      await provider.provideDocumentFormattingEdits(document).catch(() => {});
+      assert.strictEqual(spawnCalledWith?.command, "docker");
+      assert.strictEqual(
+        spawnCalledWith?.options?.cwd,
+        workspaceFolder.uri.fsPath,
+      );
+    } finally {
+      (spawn as any) = originalSpawn;
+      await config.update("executablePath", originalExec, true);
+      await config.update("enabled", originalEnabled, true);
+    }
+  });
+
+  it("Should accept exit code 1 when using wrapper with stderr output", async () => {
+    const config = workspace.getConfiguration("drupal.phpcbf");
+    const originalExec = config.get("executablePath");
+    const originalEnabled = config.get("enabled");
+    await config.update("enabled", true, true);
+    await config.update("executablePath", "ddev exec vendor/bin/phpcbf", true);
+
+    const originalSpawn = spawn;
+    (spawn as any) = (command: string, args: string[], options: any) => {
+      // Better mock implementation to support emitting
+      const handlers: any = { stdout: [], stderr: [], close: [] };
+      const proc: any = {
+        stdin: { write: () => {}, end: () => {} },
+        stdout: { on: (e: string, cb: any) => handlers.stdout.push(cb) },
+        stderr: { on: (e: string, cb: any) => handlers.stderr.push(cb) },
+        on: (e: string, cb: any) => { if (e === "close") handlers.close.push(cb) },
+      };
+
+      setImmediate(() => {
+        // Emit formatted code
+        handlers.stdout.forEach((cb: any) => cb(Buffer.from('<?php echo "fixed";')));
+        // Emit stderr noise
+        handlers.stderr.forEach((cb: any) => cb(Buffer.from("Failed to execute command: exit status 1")));
+        // Emit exit code 1
+        handlers.close.forEach((cb: any) => cb(1));
+      });
+      return proc;
+    };
+
+    try {
+      const workspaceFolder = workspace.workspaceFolders![0];
+      const drupalWorkspace = new DrupalWorkspace(workspaceFolder);
+      const provider = new PHPCBFProvider({ drupalWorkspace });
+      const documentUri = Uri.joinPath(workspaceFolder.uri, "web/test.php");
+      const originalText = '<?php echo "broken";';
+      const document = {
+        uri: documentUri,
+        getText: () => originalText,
+        languageId: "php",
+        positionAt: (offset: number) => ({ line: 0, character: offset }),
+        lineAt: (line: number) => ({
+          text: originalText,
+          range: {
+            start: { line, character: 0 },
+            end: { line, character: originalText.length },
+          },
+        }),
+        lineCount: 1,
+      } as unknown as TextDocument;
+
+      const edits = await provider.provideDocumentFormattingEdits(document);
+      assert.strictEqual(edits.length, 1);
+      assert.strictEqual(edits[0].newText, '<?php echo "fixed";');
+    } finally {
+      (spawn as any) = originalSpawn;
+      await config.update("executablePath", originalExec, true);
+      await config.update("enabled", originalEnabled, true);
+    }
+  });
 });
